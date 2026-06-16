@@ -4,9 +4,10 @@ import { SiteSettings } from '../types';
 interface FooterProps {
   whatsappNumber?: string;
   settings?: SiteSettings;
+  onGoAdmin?: () => void;
 }
 
-export default function Footer({ whatsappNumber = "+2250102030405", settings }: FooterProps) {
+export default function Footer({ whatsappNumber = "+2250102030405", settings, onGoAdmin }: FooterProps) {
   const activeWhatsApp = settings?.whatsappHotline || whatsappNumber;
   return (
     <footer className="w-full bg-slate-900 text-slate-300 py-12 px-6 border-t border-slate-800">
@@ -139,7 +140,11 @@ export default function Footer({ whatsappNumber = "+2250102030405", settings }: 
           <p className="text-[10px] text-slate-500 uppercase tracking-widest font-mono">
             &copy; 2026 {settings?.footerBrand || "Penta Gad Distribution"}. Tous droits réservés.
           </p>
-          <div className="flex items-center justify-center gap-1 text-[9px] text-slate-600 uppercase tracking-wide">
+          <div 
+            onClick={onGoAdmin}
+            className="flex items-center justify-center gap-1 text-[9px] text-slate-700 hover:text-slate-500 active:text-blue-400 uppercase tracking-wide cursor-pointer select-none transition-colors mx-auto"
+            title="Penta Gad"
+          >
             <span>Conçu avec</span>
             <Heart className="w-2.5 h-2.5 text-blue-500 fill-blue-500" />
             <span>pour les familles ivoiriennes</span>

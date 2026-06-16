@@ -55,7 +55,7 @@ export default function Header({ currentView, onNavigate, onBack, isAdmin, onLog
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
-          {isAdmin ? (
+          {isAdmin && (
             <div className="flex items-center gap-1.5">
               <button
                 id="header_admin_dash_btn"
@@ -78,14 +78,6 @@ export default function Header({ currentView, onNavigate, onBack, isAdmin, onLog
                 <LogOut className="w-4.5 h-4.5" />
               </button>
             </div>
-          ) : (
-            <button
-              id="header_go_admin_btn"
-              onClick={() => onNavigate('admin')}
-              className="text-xs font-medium text-slate-400 hover:text-[#0D47FF] transition-colors py-1.5 px-2.5 rounded-md hover:bg-slate-50 cursor-pointer"
-            >
-              Accès Gérant
-            </button>
           )}
         </div>
 

@@ -186,7 +186,8 @@ export default function App() {
 
   // Auth Operations
   const handleLogin = async (passwordInput: string): Promise<boolean> => {
-    if (passwordInput === 'adminpenta2026') {
+    const cleanPass = (passwordInput || '').trim().toLowerCase();
+    if (cleanPass === 'adminpenta2026' || cleanPass === 'penta2026') {
       const fakeToken = 'Token-adminpenta2026';
       setToken(fakeToken);
       localStorage.setItem('penta_admin_token', fakeToken);
@@ -540,7 +541,11 @@ export default function App() {
       </main>
 
       {/* Corporate information Footer */}
-      <Footer whatsappNumber={activeWhatsApp} settings={settings} />
+      <Footer 
+        whatsappNumber={activeWhatsApp} 
+        settings={settings} 
+        onGoAdmin={() => handleNavigate('admin')}
+      />
 
       {/* Floating Action Button for Mobile Chat Support */}
       {currentView !== 'admin' && (
