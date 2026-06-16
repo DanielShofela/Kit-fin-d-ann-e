@@ -1,0 +1,237 @@
+import { Category, Kit } from './types';
+
+export const fallbackCategories: Category[] = [
+  {
+    id: "bronze",
+    title: "Bronze",
+    startingAmount: "500 FCFA / jour",
+    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600",
+    order: 1
+  },
+  {
+    id: "argent",
+    title: "Argent",
+    startingAmount: "1 000 FCFA / jour",
+    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600",
+    order: 2
+  },
+  {
+    id: "or",
+    title: "Or",
+    startingAmount: "2 000 FCFA / jour",
+    image: "https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?auto=format&fit=crop&q=80&w=600",
+    order: 3
+  },
+  {
+    id: "platine",
+    title: "Platine",
+    startingAmount: "5 000 FCFA / jour",
+    image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&q=80&w=600",
+    order: 4
+  }
+];
+
+export const fallbackKits: Kit[] = [
+  {
+    id: "bronze_1",
+    categoryId: "bronze",
+    name: "Bronze Essentiel Alimentaire",
+    dailyAmount: "500 FCFA",
+    totalValue: "45 000 FCFA",
+    images: [
+      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=600"
+    ],
+    products: [
+      "Sac de Riz Premium (10 Kg)",
+      "Bouteille d'Huile raffinée (3 Litres)",
+      "Paquets de Spaghetti Supérieur (5 pièces)",
+      "Boîtes de Double Concentré de Tomate (3 petites)",
+      "Paquet de Sucre en morceaux (1 Kg)",
+      "Sachet de Lait en poudre (500g)"
+    ],
+    benefits: [
+      "Idéal pour les budgets serrés afin de sécuriser l'essentiel des fêtes",
+      "Ingrédients de grandes marques garantissant un goût exceptionnel",
+      "Le pack familial le plus populaire"
+    ],
+    deliveryInfo: "Livraison gratuite à partir du 15 Décembre directement à votre domicile ou point relais.",
+    order: 1
+  },
+  {
+    id: "bronze_2",
+    categoryId: "bronze",
+    name: "Bronze Cuisine Duo",
+    dailyAmount: "750 FCFA",
+    totalValue: "67 500 FCFA",
+    images: [
+      "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600"
+    ],
+    products: [
+      "Sac de Riz de luxe (15 Kg)",
+      "Bidon d'Huile végétale pure (5 Litres)",
+      "Spaghetti Royal qualité Or (10 paquets)",
+      "Carton de Bouillons d'Assaisonnement",
+      "Bouilloire Électrique en Inox (1.8L) incluse"
+    ],
+    benefits: [
+      "Rapport quantité-prix imbattable",
+      "Équipement électrique de cuisine durable offert dans le pack",
+      "Facilite les préparations de Noël et du Nouvel An"
+    ],
+    deliveryInfo: "Livraison offerte en commune sous 48h.",
+    order: 2
+  },
+  {
+    id: "argent_1",
+    categoryId: "argent",
+    name: "Argent Gourmand de Fête",
+    dailyAmount: "1 000 FCFA",
+    totalValue: "90 000 FCFA",
+    images: [
+      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=600"
+    ],
+    products: [
+      "Sac de Riz Parfumé Jasmin (25 Kg)",
+      "Bidon d'Huile de Tournesol (5 Litres)",
+      "Carton de Spaghetti Premium (20 paquets)",
+      "Boîte de Thé Lipton (100 sachets)",
+      "Sélection de jus de fruits premium (6 briques)",
+      "Boîtes de Lait Concentré sucré (5 boîtes)"
+    ],
+    benefits: [
+      "Grand sac de riz pour nourrir toute la famille élargie",
+      "Boissons et gourmandises festives haut de gamme",
+      "Approvisionnement complet pour les festivités de fin d'année"
+    ],
+    deliveryInfo: "Livraison express offerte en Décembre à domicile.",
+    order: 1
+  },
+  {
+    id: "argent_2",
+    categoryId: "argent",
+    name: "Argent Mixte Robot Cuisine",
+    dailyAmount: "1 500 FCFA",
+    totalValue: "135 000 FCFA",
+    images: [
+      "https://images.unsplash.com/photo-1578643463396-0997cb5328c1?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600"
+    ],
+    products: [
+      "Robot Mixeur Blendeur & Broyeur 2-en-1 puissant",
+      "Sac de Riz Parfumé (15 Kg)",
+      "Bidon d'Huile fine (5 Litres)",
+      "Service de Table chic de fin d'année (18 pièces)",
+      "Cuiseur à Riz Électrique moderne"
+    ],
+    benefits: [
+      "Cuisinez rapidement et renouvelez vos équipements",
+      "Garantie constructeur de 12 mois incluse sur le blendeur",
+      "Table de réveillon élégante grâce au service de vaisselle inclus"
+    ],
+    deliveryInfo: "Livraison sécurisée avec emballage renforcé anti-chocs.",
+    order: 2
+  },
+  {
+    id: "or_1",
+    categoryId: "or",
+    name: "Or Prestige Royal",
+    dailyAmount: "2 000 FCFA",
+    totalValue: "180 000 FCFA",
+    images: [
+      "https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=600"
+    ],
+    products: [
+      "Grand Sac de Riz Parfumé Royal (50 Kg)",
+      "Grand Bidon d'Huile de table raffinée (10 Litres)",
+      "Un carton entier de Spaghetti (40 paquets)",
+      "Carton de Sardines à l'huile (50 boîtes)",
+      "Carton de Concentré de Tomate (24 boîtes)",
+      "Blendeur multifonction grande marque offert"
+    ],
+    benefits: [
+      "Tranquillité totale : ravitaillement alimentaire pour plus de 3 mois!",
+      "Qualité d'ingrédients sélectionnée pour les grands repas de fêtes",
+      "Réduction massive en achetant en lot complet"
+    ],
+    deliveryInfo: "Livraison par camionnette d'installation, déchargée directement à votre cuisine.",
+    order: 1
+  },
+  {
+    id: "or_2",
+    categoryId: "or",
+    name: "Or Cuistot Moderne",
+    dailyAmount: "2 500 FCFA",
+    totalValue: "225 000 FCFA",
+    images: [
+      "https://images.unsplash.com/photo-1578643463396-0997cb5328c1?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80&w=600"
+    ],
+    products: [
+      "Four Électrique Grande Capacité (45 Litres) avec double tournebroche",
+      "Plaque chauffante à Induction tactile",
+      "Batterie de cuisine haut de gamme en Granite (5 marmites de luxe + couvercles)",
+      "Sac de Riz parfumé (20 Kg)",
+      "Bidon d'Huile fine (5 Litres)"
+    ],
+    benefits: [
+      "Transformez votre cuisine en un véritable atelier de chef",
+      "Réussissez vos dindes, gâteaux et rôtis de fin d'année à coup sûr",
+      "Granite anti-adhésif ultra résistant et sain"
+    ],
+    deliveryInfo: "Livraison avec appel de confirmation et prise de rendez-vous.",
+    order: 2
+  },
+  {
+    id: "platine_1",
+    categoryId: "platine",
+    name: "Platine Grand Écran & Festin",
+    dailyAmount: "5 000 FCFA",
+    totalValue: "450 000 FCFA",
+    images: [
+      "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=600"
+    ],
+    products: [
+      "Téléviseur Smart-TV LED 43 Pouces Full HD connectée",
+      "Réchaud à Gaz Premium 4 Foyers avec Four intégré",
+      "Micro-ondes Digital 25 Litres moderne",
+      "Sac de Riz double parfum (50 Kg)",
+      "Grand Bidon d'Huile premium (10 Litres)",
+      "Assortiment de 12 bouteilles de boissons gazéifiées festives"
+    ],
+    benefits: [
+      "Restaurez tout votre salon et votre cuisine pour la nouvelle année",
+      "Divertissement familial assuré avec la Smart TV (Netflix, YouTube, etc.)",
+      "Four de cuisson intégré de haute sécurité alimentaire"
+    ],
+    deliveryInfo: "Livraison ultra-prioritaire programmée gratuite de bout en bout.",
+    order: 1
+  },
+  {
+    id: "platine_2",
+    categoryId: "platine",
+    name: "Platine Confort Absolu",
+    dailyAmount: "10 000 FCFA",
+    totalValue: "900 000 FCFA",
+    images: [
+      "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=600",
+      "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&q=80&w=600"
+    ],
+    products: [
+      "Réfrigérateur Double Porte Froid Ventilé No-Frost (320 Litres)",
+      "Salon d'angle de luxe moderne rembourré (velours d'importation)",
+      "Pack Bronze Essentiel Alimentaire offert gratuitement"
+    ],
+    benefits: [
+      "Améliorez radicalement votre confort quotidien sur le long terme",
+      "Conservez vos stocks de nourriture géants en toute sérénité",
+      "Financement journalier extrêmement flexible et adapté à vos revenus"
+    ],
+    deliveryInfo: "Livraison à domicile incluant le montage complet du canapé par des professionnels.",
+    order: 2
+  }
+];

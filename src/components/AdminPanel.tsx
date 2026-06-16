@@ -89,6 +89,61 @@ export default function AdminPanel({
     }, 4000);
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+
+  const uploadImageFile = async (file: File): Promise<string | null> => {
+    setIsUploading(true);
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+
+      const base64Data = await base64Promise;
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: file.name,
+          type: file.type,
+          data: base64Data
+        })
+      });
+
+      if (!res.ok) {
+        let errorMessage = 'Erreur lors du téléversement';
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errData = await res.json();
+            errorMessage = errData.error || errorMessage;
+          } else {
+            const textData = await res.text();
+            errorMessage = textData.substring(0, 150) || res.statusText;
+          }
+        } catch (e) {
+          errorMessage = `Erreur (${res.status}): ${res.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await res.json();
+      setIsUploading(false);
+      return data.url;
+    } catch (err: any) {
+      console.error(err);
+      showStatus(err.message || 'Erreur lors de l’envoi de l’image', 'error');
+      setIsUploading(false);
+      return null;
+    }
+  };
+
   // Preset Image Catalog to choose from tap
   const imagePresets = [
     { name: "Alimentation Bronze", url: "/src/assets/images/food_pack_bronze_1781612322822.jpg" },
@@ -725,7 +780,48 @@ export default function AdminPanel({
 
               {/* Image url selection and preset list */}
               <div className="space-y-2">
-                <label className="block tracking-wider">Lien de l'image *</label>
+                <div className="flex justify-between items-center">
+                  <label className="block tracking-wider">Image de la catégorie *</label>
+                  <span className="text-[10px] text-[#0D47FF] font-bold">Uploader ou URL</span>
+                </div>
+
+                {/* Direct device-file uploader */}
+                <div className="flex gap-2.5 items-center">
+                  <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 hover:border-[#0D47FF] rounded-xl p-3 bg-slate-50 hover:bg-slate-100/50 cursor-pointer transition-all">
+                    <span className="text-xs text-slate-600 font-bold flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-[#0D47FF]" />
+                      {isUploading ? 'Téléversement...' : 'Uploader une Image'}
+                    </span>
+                    <span className="text-[8px] text-slate-400 mt-1">PNG, JPG de votre appareil</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploading}
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const uploadedUrl = await uploadImageFile(file);
+                          if (uploadedUrl) {
+                            setCatForm({ ...catForm, image: uploadedUrl });
+                            showStatus('Image téléversée avec succès !');
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                  {catForm.image && (
+                    <img 
+                      src={catForm.image} 
+                      alt="Aperçu" 
+                      className="w-14 h-14 object-cover rounded-xl border border-slate-200 bg-slate-100 shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
+                </div>
+
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider text-center py-1">ou</div>
+
                 <input
                   type="text"
                   required
@@ -858,6 +954,37 @@ export default function AdminPanel({
                   ))}
                 </div>
 
+                {/* Direct uploader for Kit images */}
+                <div className="mb-2 mt-1">
+                  <label className="flex flex-col items-center justify-center border border-dashed border-slate-300 hover:border-[#0D47FF] rounded-lg p-2.5 bg-white hover:bg-slate-50 cursor-pointer transition-all">
+                    <span className="text-[11px] text-slate-700 font-bold flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5 text-[#0D47FF]" />
+                      {isUploading ? 'Téléversement en cours...' : 'Uploader une image de votre appareil'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isUploading}
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const uploadedUrl = await uploadImageFile(file);
+                          if (uploadedUrl) {
+                            setKitForm(prev => ({
+                              ...prev,
+                              images: [...prev.images, uploadedUrl]
+                            }));
+                            showStatus('Image téléversée et ajoutée avec succès !');
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="text-[9px] text-slate-400 uppercase tracking-widest text-center my-1.5">ou par adresse URL</div>
+
                 {/* Input row */}
                 <div className="flex gap-2.5">
                   <input
@@ -870,9 +997,9 @@ export default function AdminPanel({
                   <button
                     type="button"
                     onClick={handleAddImageURL}
-                    className="bg-blue-600 text-white text-[10px] py-1 px-3.5 rounded-lg shrink-0 cursor-pointer"
+                    className="bg-[#0D47FF] hover:bg-blue-700 text-white text-[10px] py-1 px-3.5 rounded-lg shrink-0 cursor-pointer font-bold"
                   >
-                    Ajouter
+                    Ajouter URL
                   </button>
                 </div>
 

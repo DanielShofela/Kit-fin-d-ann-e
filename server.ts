@@ -8,8 +8,12 @@ const PORT = 3000;
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 
 // Ensure database folders exist
+const UPLOADS_DIR = path.join(process.cwd(), 'data', 'uploads');
 if (!fs.existsSync(path.join(process.cwd(), 'data'))) {
   fs.mkdirSync(path.join(process.cwd(), 'data'), { recursive: true });
+}
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
 // Initial seed data with our beautiful generated images & catalog kits
@@ -276,8 +280,12 @@ function writeDB(data: any) {
   }
 }
 
-// Middleware to parse JSON bodies
-app.use(express.json());
+// Middleware to parse JSON bodies with 50MB limit to support high-res image uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Serve uploaded images statically
+app.use('/data/uploads', express.static(UPLOADS_DIR));
 
 // Load initial database
 readDB();
@@ -306,6 +314,33 @@ function authenticateToken(req: express.Request, res: express.Response, next: ex
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ satus: 'ok' });
+});
+
+// Admin image upload
+app.post('/api/upload', authenticateToken, (req, res) => {
+  try {
+    const { name, type, data } = req.body;
+    if (!name || !data) {
+      return res.status(400).json({ error: 'Le nom et les données de l\'image sont requis.' });
+    }
+
+    const base64Content = data.split(';base64,').pop();
+    if (!base64Content) {
+      return res.status(400).json({ error: 'Format de données invalide.' });
+    }
+
+    const ext = name.split('.').pop() || 'png';
+    const timestampFilename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+    const filePath = path.join(UPLOADS_DIR, timestampFilename);
+
+    fs.writeFileSync(filePath, Buffer.from(base64Content, 'base64'));
+
+    const fileUrl = `/data/uploads/${timestampFilename}`;
+    res.json({ url: fileUrl });
+  } catch (err: any) {
+    console.error("Error writing uploaded file:", err);
+    res.status(500).json({ error: `Échec du téléversement: ${err.message}` });
+  }
 });
 
 // Admin login
@@ -523,6 +558,18 @@ app.post('/api/reorder-kits', authenticateToken, (req, res) => {
 
   writeDB(db);
   res.json({ message: 'Kits réordonnés avec succès.' });
+});
+
+// Global error handling middleware to format any parsing/system errors (such as PayloadTooLargeError) as JSON
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err) {
+    console.error("Express Error Intercepted:", err);
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Une erreur interne du serveur est survenue.";
+    res.status(status).json({ error: message });
+  } else {
+    next();
+  }
 });
 
 
