@@ -1,4 +1,5 @@
 import { Sparkles, ArrowLeft, ShieldAlert, LogOut, Gift } from 'lucide-react';
+import { SiteSettings } from '../types';
 
 interface HeaderProps {
   currentView: string;
@@ -6,9 +7,10 @@ interface HeaderProps {
   onBack: (() => void) | null;
   isAdmin: boolean;
   onLogout: () => void;
+  settings?: SiteSettings;
 }
 
-export default function Header({ currentView, onNavigate, onBack, isAdmin, onLogout }: HeaderProps) {
+export default function Header({ currentView, onNavigate, onBack, isAdmin, onLogout, settings }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm px-4 py-3.5">
       <div className="max-w-md mx-auto flex items-center justify-between">
@@ -33,11 +35,11 @@ export default function Header({ currentView, onNavigate, onBack, isAdmin, onLog
                 <Gift className="w-4.5 h-4.5" />
               </div>
               <div className="flex flex-col">
-                <span className="font-display font-extrabold text-[15px] leading-none tracking-tight text-slate-900 group-hover:text-[#0D47FF] duration-250">
-                  PENTA GAD
+                <span className="font-display font-extrabold text-[15px] leading-none tracking-tight text-slate-900 group-hover:text-[#0D47FF] duration-250 uppercase">
+                  {settings?.headerBrand || "PENTA GAD"}
                 </span>
                 <span className="text-[9px] font-bold text-[#0D47FF] uppercase tracking-widest leading-none mt-0.5">
-                  Distribution
+                  {settings?.headerSubtitle || "Distribution"}
                 </span>
               </div>
             </div>

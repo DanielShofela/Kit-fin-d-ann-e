@@ -4,7 +4,7 @@ import {
   Settings, CheckCircle, RefreshCcw, Tag, ShoppingBag, Eye,
   Image as ImageIcon, HelpCircle, Layers, ClipboardList, Info
 } from 'lucide-react';
-import { Category, Kit } from '../types';
+import { Category, Kit, SiteSettings } from '../types';
 
 interface AdminPanelProps {
   categories: Category[];
@@ -22,6 +22,9 @@ interface AdminPanelProps {
   onUpdateKit: (id: string, kit: Partial<Kit>) => Promise<boolean>;
   onDeleteKit: (id: string) => Promise<boolean>;
   onReorderKits: (sortedIds: string[]) => Promise<boolean>;
+  // Site Customization Configs
+  settings: SiteSettings;
+  onUpdateSettings: (newSettings: Partial<SiteSettings>) => Promise<boolean>;
 }
 
 export default function AdminPanel({
@@ -37,7 +40,9 @@ export default function AdminPanel({
   onAddKit,
   onUpdateKit,
   onDeleteKit,
-  onReorderKits
+  onReorderKits,
+  settings,
+  onUpdateSettings
 }: AdminPanelProps) {
   
   // Login State
@@ -46,7 +51,7 @@ export default function AdminPanel({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'categories' | 'kits'>('categories');
+  const [activeTab, setActiveTab] = useState<'categories' | 'kits' | 'settings'>('categories');
 
   // Selected Category filter for Kits list
   const [selectedCatFilter, setSelectedCatFilter] = useState<string>('all');
@@ -78,6 +83,29 @@ export default function AdminPanel({
   const [productInput, setProductInput] = useState('');
   const [benefitInput, setBenefitInput] = useState('');
   const [imageInput, setImageInput] = useState('');
+
+  // Settings customizable states
+  const [settingsForm, setSettingsForm] = useState<SiteSettings>(settings);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Sync state if settings update
+  useEffect(() => {
+    if (settings) {
+      setSettingsForm(settings);
+    }
+  }, [settings]);
+
+  const handleSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingSettings(true);
+    const success = await onUpdateSettings(settingsForm);
+    setIsSavingSettings(false);
+    if (success) {
+      showStatus('Configuration du site enregistrée et mise en ligne !');
+    } else {
+      showStatus('Erreur lors de l\'enregistrement des configurations.', 'error');
+    }
+  };
 
   // Status message
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -552,6 +580,19 @@ export default function AdminPanel({
             <ClipboardList className="w-4 h-4" />
             <span>Packs & Kits ({kits.length})</span>
           </button>
+
+          <button
+            id="tab_settings_btn"
+            onClick={() => setActiveTab('settings')}
+            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'settings' 
+                ? 'bg-[#0D47FF] text-white shadow-md' 
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Personnaliser</span>
+          </button>
         </div>
       </div>
 
@@ -745,6 +786,511 @@ export default function AdminPanel({
               )}
             </div>
           </div>
+        )}
+
+        {/* TAB 3: SETTINGS CUSTOMIZATION */}
+        {activeTab === 'settings' && (
+          <form onSubmit={handleSettingsSubmit} className="space-y-6">
+            <div className="bg-white rounded-3xl p-5 border shadow-sm space-y-5">
+              <div className="flex items-center gap-2 border-b pb-3">
+                <Settings className="w-5 h-5 text-[#0D47FF]" />
+                <h3 className="font-display font-black text-xs uppercase tracking-wider text-slate-800">
+                  En-tête de Marque (Header)
+                </h3>
+              </div>
+              
+              <div className="space-y-3 text-xs font-semibold text-slate-500 uppercase">
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Nom Principal de la Marque :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.headerBrand}
+                    onChange={e => setSettingsForm({ ...settingsForm, headerBrand: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Sous-titre / Activité :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.headerSubtitle}
+                    onChange={e => setSettingsForm({ ...settingsForm, headerSubtitle: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-5 border shadow-sm space-y-5">
+              <div className="flex items-center gap-2 border-b pb-3">
+                <ImageIcon className="w-5 h-5 text-[#0D47FF]" />
+                <h3 className="font-display font-black text-xs uppercase tracking-wider text-slate-800">
+                  Bannière Principale du haut (Hero Banner)
+                </h3>
+              </div>
+              
+              <div className="space-y-4 text-xs font-semibold text-slate-500 uppercase">
+                <div className="space-y-1.5">
+                  <label className="block tracking-wider text-[10px]">Image d'Arrière-plan :</label>
+                  <div className="flex items-center gap-3">
+                    <label className="bg-slate-100 hover:bg-slate-200 border text-slate-700 font-bold px-4 py-2.5 rounded-xl text-[10px] cursor-pointer inline-flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Téléverser une image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploading}
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const uploadedUrl = await uploadImageFile(file);
+                            if (uploadedUrl) {
+                              setSettingsForm({ ...settingsForm, heroImage: uploadedUrl });
+                              showStatus('Image d\'arrière-plan téléversée !');
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+                    {settingsForm.heroImage ? (
+                      <img 
+                        src={settingsForm.heroImage} 
+                        alt="Aperçu" 
+                        className="w-14 h-14 object-cover rounded-xl border border-slate-200 bg-slate-100 shrink-0"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <span className="text-[10px] text-slate-400">Aucun fichier</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Badge de Campagne :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.heroCampaignBadge}
+                    onChange={e => setSettingsForm({ ...settingsForm, heroCampaignBadge: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Slogan / Headline Principale :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.heroHeadline}
+                    onChange={e => setSettingsForm({ ...settingsForm, heroHeadline: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Ligne de Sous-titre :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.heroSubtitle}
+                    onChange={e => setSettingsForm({ ...settingsForm, heroSubtitle: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Texte d'Action du Bouton (CTA) :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.heroCtaText}
+                    onChange={e => setSettingsForm({ ...settingsForm, heroCtaText: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-5 border shadow-sm space-y-5">
+              <div className="flex items-center gap-2 border-b pb-3">
+                <ShoppingBag className="w-5 h-5 text-[#0D47FF]" />
+                <h3 className="font-display font-black text-xs uppercase tracking-wider text-slate-800">
+                  Boîte Promotionnelle (Mini showcase Hero)
+                </h3>
+              </div>
+              
+              <div className="space-y-4 text-xs font-semibold text-slate-500 uppercase">
+                <div className="space-y-1.5">
+                  <label className="block tracking-wider text-[10px]">Miniature d'Illustration :</label>
+                  <div className="flex items-center gap-3">
+                    <label className="bg-slate-100 hover:bg-slate-200 border text-slate-700 font-bold px-4 py-2.5 rounded-xl text-[10px] cursor-pointer inline-flex items-center gap-1.5">
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Téléverser une image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploading}
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const uploadedUrl = await uploadImageFile(file);
+                            if (uploadedUrl) {
+                              setSettingsForm({ ...settingsForm, heroPromoImage: uploadedUrl });
+                              showStatus('Image promotionnelle chargée !');
+                            }
+                          }
+                        }}
+                      />
+                    </label>
+                    {settingsForm.heroPromoImage ? (
+                      <img 
+                        src={settingsForm.heroPromoImage} 
+                        alt="Aperçu" 
+                        className="w-14 h-14 object-cover rounded-xl border border-slate-200 bg-slate-100 shrink-0"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <span className="text-[10px] text-slate-400">Aucun fichier</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Nom de Marque / Label Or :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.heroPromoBrand}
+                    onChange={e => setSettingsForm({ ...settingsForm, heroPromoBrand: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Titre Principal :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.heroPromoTitle}
+                    onChange={e => setSettingsForm({ ...settingsForm, heroPromoTitle: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Description de l'offre :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.heroPromoDesc}
+                    onChange={e => setSettingsForm({ ...settingsForm, heroPromoDesc: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-5 border shadow-sm space-y-5">
+              <div className="flex items-center gap-2 border-b pb-3">
+                <Info className="w-5 h-5 text-[#0D47FF]" />
+                <h3 className="font-display font-black text-xs uppercase tracking-wider text-slate-800">
+                  Bandeau d'Information d'Urgence & FAQ
+                </h3>
+              </div>
+              
+              <div className="space-y-3 text-xs font-semibold text-slate-500 uppercase">
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Titre du bandeau :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.infoTitle}
+                    onChange={e => setSettingsForm({ ...settingsForm, infoTitle: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Paragraphe du bandeau :</label>
+                  <textarea
+                    rows={3}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.infoDescription}
+                    onChange={e => setSettingsForm({ ...settingsForm, infoDescription: e.target.value })}
+                  />
+                </div>
+
+                <div className="border-t pt-3 mt-3 space-y-3">
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[10px]">Titre Section FAQ :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.faqTitle}
+                      onChange={e => setSettingsForm({ ...settingsForm, faqTitle: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[10px]">Question FAQ 1 :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.faqQ1}
+                      onChange={e => setSettingsForm({ ...settingsForm, faqQ1: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[10px]">Réponse FAQ 1 :</label>
+                    <textarea
+                      rows={2}
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.faqA1}
+                      onChange={e => setSettingsForm({ ...settingsForm, faqA1: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1 border-t pt-2">
+                    <label className="block tracking-wider text-[10px]">Question FAQ 2 :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.faqQ2}
+                      onChange={e => setSettingsForm({ ...settingsForm, faqQ2: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[10px]">Réponse FAQ 2 :</label>
+                    <textarea
+                      rows={2}
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.faqA2}
+                      onChange={e => setSettingsForm({ ...settingsForm, faqA2: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-5 border shadow-sm space-y-5">
+              <div className="flex items-center gap-2 border-b pb-3">
+                <Tag className="w-5 h-5 text-[#0D47FF]" />
+                <h3 className="font-display font-black text-xs uppercase tracking-wider text-slate-800">
+                  Branding et Coordonnées du Footer (Pied de Page)
+                </h3>
+              </div>
+              
+              <div className="space-y-3 text-xs font-semibold text-slate-500 uppercase">
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Nom Principal de l'Entreprise :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.footerBrand}
+                    onChange={e => setSettingsForm({ ...settingsForm, footerBrand: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Sous-titre de l'Entreprise :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.footerSubtitle}
+                    onChange={e => setSettingsForm({ ...settingsForm, footerSubtitle: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Description Courte de Présentation :</label>
+                  <textarea
+                    rows={3}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.footerDesc}
+                    onChange={e => setSettingsForm({ ...settingsForm, footerDesc: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block tracking-wider text-[10px]">Adresse Géographique :</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800"
+                    value={settingsForm.footerAddress}
+                    onChange={e => setSettingsForm({ ...settingsForm, footerAddress: e.target.value })}
+                  />
+                </div>
+
+                <div className="border-t pt-3 mt-3 space-y-3">
+                  <span className="text-[10px] font-extrabold text-[#0D47FF] block">Téléphones pour Appels Commerciaux :</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label className="block tracking-wider text-[9px]">Ligne Orange :</label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 p-2 text-slate-800 font-mono text-[11px]"
+                        value={settingsForm.phoneOrange}
+                        onChange={e => setSettingsForm({ ...settingsForm, phoneOrange: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block tracking-wider text-[9px]">Ligne Moov :</label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 p-2 text-slate-800 font-mono text-[11px]"
+                        value={settingsForm.phoneMoov}
+                        onChange={e => setSettingsForm({ ...settingsForm, phoneMoov: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block tracking-wider text-[9px]">Ligne MTN :</label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 p-2 text-slate-800 font-mono text-[11px]"
+                        value={settingsForm.phoneMtn}
+                        onChange={e => setSettingsForm({ ...settingsForm, phoneMtn: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1 border-t pt-2">
+                    <label className="block tracking-wider text-[10px] text-emerald-600 font-bold">Ligne d'Assistance WhatsApp (Exemple: +2250703397921) :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl normal-case text-slate-800 font-mono"
+                      value={settingsForm.whatsappHotline}
+                      onChange={e => setSettingsForm({ ...settingsForm, whatsappHotline: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-5 border shadow-sm space-y-5">
+              <div className="flex items-center gap-2 border-b pb-3">
+                <CheckCircle className="w-5 h-5 text-[#0D47FF]" />
+                <h3 className="font-display font-black text-xs uppercase tracking-wider text-slate-800">
+                  Moyens Mobiles Money (MoMo d'Épargne)
+                </h3>
+              </div>
+              
+              <div className="space-y-4 text-xs font-semibold text-slate-500 uppercase">
+                <div className="grid grid-cols-2 gap-3 pb-3 border-b">
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[9px] text-sky-500">Label WAVE :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.momoWaveName}
+                      onChange={e => setSettingsForm({ ...settingsForm, momoWaveName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[9px] text-sky-500 font-mono">N° de Compte :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl normal-case text-slate-800 font-mono"
+                      value={settingsForm.momoWaveNum}
+                      onChange={e => setSettingsForm({ ...settingsForm, momoWaveNum: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pb-3 border-b">
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[9px] text-orange-500">Label ORANGE :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.momoOrangeName}
+                      onChange={e => setSettingsForm({ ...settingsForm, momoOrangeName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[9px] text-orange-500 font-mono">N° de Compte :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl normal-case text-slate-800 font-mono"
+                      value={settingsForm.momoOrangeNum}
+                      onChange={e => setSettingsForm({ ...settingsForm, momoOrangeNum: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pb-3 border-b">
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[9px] text-yellow-600">Label MTN :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.momoMtnName}
+                      onChange={e => setSettingsForm({ ...settingsForm, momoMtnName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[9px] text-yellow-600 font-mono">N° de Compte :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl normal-case text-slate-800 font-mono"
+                      value={settingsForm.momoMtnNum}
+                      onChange={e => setSettingsForm({ ...settingsForm, momoMtnNum: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[9px] text-sky-600">Label MOOV :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl normal-case text-slate-800"
+                      value={settingsForm.momoMoovName}
+                      onChange={e => setSettingsForm({ ...settingsForm, momoMoovName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block tracking-wider text-[9px] text-sky-600 font-mono">N° de Compte :</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-xl normal-case text-slate-800 font-mono"
+                      value={settingsForm.momoMoovNum}
+                      onChange={e => setSettingsForm({ ...settingsForm, momoMoovNum: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-4 bg-slate-950/80 backdrop-blur-md p-3.5 rounded-2.5xl border border-slate-800/10 flex gap-3 text-xs z-10">
+              <button
+                type="submit"
+                disabled={isSavingSettings || isUploading}
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold p-3.5 rounded-xl flex items-center justify-center gap-1.5 shadow shadow-emerald-600/20 active:scale-95 duration-200 cursor-pointer disabled:opacity-50 uppercase tracking-wider"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSavingSettings ? 'Enregistrement...' : 'Mettre En Ligne la Configuration'}</span>
+              </button>
+            </div>
+          </form>
         )}
 
       </div>

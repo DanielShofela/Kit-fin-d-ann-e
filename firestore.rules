@@ -20,5 +20,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    // Allow public read access to settings for personalization of text and images,
+    // and full write access for administrative panel updates.
+    match /settings/{settingsId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }

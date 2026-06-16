@@ -1,4 +1,4 @@
-import { Category, Kit } from './types';
+import { Category, Kit, SiteSettings } from './types';
 
 export const fallbackCategories: Category[] = [
   {
@@ -235,3 +235,47 @@ export const fallbackKits: Kit[] = [
     order: 2
   }
 ];
+
+export const fallbackSettings: SiteSettings = {
+  headerBrand: "PENTA GAD",
+  headerSubtitle: "Distribution",
+  
+  heroImage: "/src/assets/images/hero_banner_festive_1781612306255.jpg",
+  heroCampaignBadge: "Campagne Préparation 2026",
+  heroHeadline: "Préparez votre fin d'année dès aujourd'hui",
+  heroSubtitle: "Kits Alimentaires • Électroménagers • Maison",
+  heroPromoBrand: "Penta Gad Distribution",
+  heroPromoTitle: "Un foyer équipé & gâté pour Noël",
+  heroPromoDesc: "Financement souple par contributions journalières",
+  heroPromoImage: "/src/assets/images/food_pack_bronze_1781612322822.jpg",
+  heroCtaText: "Découvrir les Packs",
+
+  infoTitle: "Pourquoi s'inscrire dès aujourd'hui ?",
+  infoDescription: "Toutes les grandes enseignes connaissent des ruptures de riz et d'électroménager en décembre. En souscrivant aujourd'hui avec Penta Gad, votre kit est bloqué, emballé et stocké en priorité pour vous.",
+
+  faqTitle: "FAQ & Fonctionnement",
+  faqQ1: "Comment se fait le paiement ?",
+  faqA1: "Un agent commercial Penta Gad fixe avec vous une collecte périodique (journalière, hebdomadaire ou mensuelle) à votre convenance.",
+  faqQ2: "Quand a lieu la livraison ?",
+  faqA2: "La distribution festive commence dès la mi-décembre pour vous permettre d'anticiper sereinement vos fêtes.",
+
+  footerBrand: "PENTA GAD DISTRIBUTION",
+  footerSubtitle: "Packs d'adhésion de fin d'année",
+  footerDesc: "Penta Gad Distribution est votre partenaire officiel de confiance pour l'équipement de la maison et le ravitaillement de vos fêtes. Un crédit d'épargne journalier souple et adapté à vos revenus.",
+  footerAddress: "Yopougon sapeur-pompier, non loin de la cité SGBCI, Abidjan",
+  
+  phoneOrange: "07 03 39 79 21",
+  phoneMoov: "01 00 82 57 81",
+  phoneMtn: "05 85 45 98 81",
+  whatsappHotline: "+2250703397921",
+  
+  momoWaveName: "🌊 WAVE IP",
+  momoWaveNum: "01 00 82 57 81",
+  momoOrangeName: "🍊 ORANGE MONEY",
+  momoOrangeNum: "07 03 39 79 21",
+  momoMtnName: "🟡 MTN MOMO",
+  momoMtnNum: "05 85 45 98 81",
+  momoMoovName: "🔵 MOOV MONEY",
+  momoMoovNum: "01 00 82 57 81"
+};
+

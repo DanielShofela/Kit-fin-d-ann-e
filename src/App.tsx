@@ -6,12 +6,12 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 // Shared interfaces
-import { Category, Kit } from './types';
-import { fallbackCategories, fallbackKits } from './defaultData';
+import { Category, Kit, SiteSettings } from './types';
+import { fallbackCategories, fallbackKits, fallbackSettings } from './defaultData';
 
 // Firebase & Firestore setup
 import { 
-  collection, getDocs, setDoc, doc, deleteDoc, writeBatch, query, orderBy 
+  collection, getDocs, getDoc, setDoc, doc, deleteDoc, writeBatch, query, orderBy 
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './firebase';
 
@@ -29,6 +29,7 @@ export default function App() {
   // Application Data States
   const [categories, setCategories] = useState<Category[]>([]);
   const [kits, setKits] = useState<Kit[]>([]);
+  const [settings, setSettings] = useState<SiteSettings>(fallbackSettings);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [isStaticMode, setIsStaticMode] = useState<boolean>(() => {
@@ -60,9 +61,24 @@ export default function App() {
       setLoading(true);
       setErrorMsg('');
 
-      // Fetch categories and kits from Firebase Firestore
+      // Fetch categories, kits, and settings from Firebase Firestore
       const cats: Category[] = [];
       const kts: Kit[] = [];
+      let siteSettings: SiteSettings = { ...fallbackSettings };
+
+      // Try fetching our customizable site settings first
+      try {
+        const settingsRef = doc(db, 'settings', 'site_config');
+        const settingsSnap = await getDoc(settingsRef);
+        if (settingsSnap.exists()) {
+          siteSettings = { ...fallbackSettings, ...settingsSnap.data() } as SiteSettings;
+        } else {
+          console.log("Les configurations du site sont vides en base. Initialisation...");
+          await setDoc(settingsRef, fallbackSettings);
+        }
+      } catch (err) {
+        console.warn("Impossible de charger les configurations du site, utilisation des valeurs de secours :", err);
+      }
 
       try {
         const catQuery = query(collection(db, 'categories'), orderBy('order', 'asc'));
@@ -113,6 +129,7 @@ export default function App() {
 
       setCategories(cats);
       setKits(kts);
+      setSettings(siteSettings);
       setIsStaticMode(true); // Always keep in static/decentralized Firestore direct mode
       localStorage.setItem('penta_is_static_mode', 'true');
     } catch (err: any) {
@@ -121,6 +138,7 @@ export default function App() {
       
       setCategories(fallbackCategories);
       setKits(fallbackKits);
+      setSettings(fallbackSettings);
     } finally {
       setLoading(false);
     }
@@ -175,6 +193,18 @@ export default function App() {
       return true;
     }
     return false;
+  };
+
+  const handleUpdateSettings = async (newSettings: Partial<SiteSettings>): Promise<boolean> => {
+    try {
+      const merged = { ...settings, ...newSettings };
+      await setDoc(doc(db, 'settings', 'site_config'), merged);
+      setSettings(merged);
+      return true;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/site_config');
+      return false;
+    }
   };
 
   const handleLogout = () => {
@@ -320,6 +350,8 @@ export default function App() {
   // Is back button present
   const isBackPresent = viewHistory.length > 1 ? handleBack : null;
 
+  const activeWhatsApp = settings.whatsappHotline || WHATSAPP_HOTLINE;
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col antialiased">
       
@@ -330,6 +362,7 @@ export default function App() {
         onBack={isBackPresent}
         isAdmin={!!token}
         onLogout={handleLogout}
+        settings={settings}
       />
 
       {/* Main Core Router View Wrapper */}
@@ -368,7 +401,7 @@ export default function App() {
                     if (el) {
                       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                  }} />
+                  }} settings={settings} />
 
                   {/* Horizontal swipe Categories list */}
                   <CategoryCarousel
@@ -430,9 +463,9 @@ export default function App() {
                     <div className="bg-gradient-to-tr from-amber-50 to-amber-100/50 border border-amber-200 p-5 rounded-2.5xl space-y-3 shadow-sm text-center flex flex-col items-center">
                       <Calendar className="w-7 h-7 text-amber-600 animate-pulse" />
                       <div className="text-center">
-                        <h4 className="font-bold text-amber-900 text-xs uppercase tracking-wider">Pourquoi s'inscrire dès aujourd'hui ?</h4>
+                        <h4 className="font-bold text-amber-900 text-xs uppercase tracking-wider">{settings.infoTitle}</h4>
                         <p className="text-[11px] text-amber-800 leading-[1.45] mt-1.5">
-                          Toutes les grandes enseignes connaissent des ruptures de riz et d'électroménager en décembre. En souscrivant aujourd'hui avec Penta Gad, votre kit est <strong>bloqué, emballé et stocké en priorité</strong> pour vous.
+                          {settings.infoDescription}
                         </p>
                       </div>
                     </div>
@@ -441,16 +474,16 @@ export default function App() {
                   {/* FAQ Quick block */}
                   <div className="max-w-md mx-auto px-6 pb-12">
                     <div className="bg-white border rounded-2.5xl p-5 space-y-4">
-                      <h4 className="font-display font-black text-xs uppercase tracking-wider text-slate-700">FAQ & Fonctionnement</h4>
+                      <h4 className="font-display font-black text-xs uppercase tracking-wider text-slate-700">{settings.faqTitle}</h4>
                       
                       <div className="space-y-3 text-xs leading-[1.4]">
                         <div className="space-y-1">
-                          <p className="font-bold text-slate-800">1. Comment se fait le paiement ?</p>
-                          <p className="text-slate-500">Un agent commercial Penta Gad fixe avec vous une collecte périodique (journalière, hebdomadaire ou mensuelle) à votre convenance.</p>
+                          <p className="font-bold text-slate-800">1. {settings.faqQ1}</p>
+                          <p className="text-slate-500">{settings.faqA1}</p>
                         </div>
                         <div className="space-y-1 border-t pt-2.5">
-                          <p className="font-bold text-slate-800">2. Quand a lieu la livraison ?</p>
-                          <p className="text-slate-500">La distribution festive commence dès la mi-décembre pour vous permettre d'anticiper sereinement vos fêtes.</p>
+                          <p className="font-bold text-slate-800">2. {settings.faqQ2}</p>
+                          <p className="text-slate-500">{settings.faqA2}</p>
                         </div>
                       </div>
                     </div>
@@ -495,6 +528,8 @@ export default function App() {
                   onUpdateKit={handleUpdateKit}
                   onDeleteKit={handleDeleteKit}
                   onReorderKits={handleReorderKits}
+                  settings={settings}
+                  onUpdateSettings={handleUpdateSettings}
                 />
               )}
 
@@ -505,12 +540,12 @@ export default function App() {
       </main>
 
       {/* Corporate information Footer */}
-      <Footer whatsappNumber={WHATSAPP_HOTLINE} />
+      <Footer whatsappNumber={activeWhatsApp} settings={settings} />
 
       {/* Floating Action Button for Mobile Chat Support */}
       {currentView !== 'admin' && (
         <a
-          href={`https://wa.me/${WHATSAPP_HOTLINE.replace(/[^0-9+]/g, '')}`}
+          href={`https://wa.me/${activeWhatsApp.replace(/[^0-9+]/g, '')}`}
           target="_blank"
           rel="noopener noreferrer"
           className="fixed bottom-24 right-4 z-40 bg-emerald-500 hover:bg-emerald-600 text-white p-3.5 rounded-full shadow-lg hover:shadow-emerald-500/20 active:scale-95 transition-all text-sm flex items-center justify-center cursor-pointer border-2 border-white"
@@ -525,7 +560,7 @@ export default function App() {
         <RequestFormModal
           kit={activeKit}
           onClose={() => setIsFormOpen(false)}
-          whatsappNumber={WHATSAPP_HOTLINE}
+          whatsappNumber={activeWhatsApp}
         />
       )}
 

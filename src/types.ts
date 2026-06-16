@@ -23,3 +23,46 @@ export interface AdminSession {
   token: string;
   username: string;
 }
+
+export interface SiteSettings {
+  headerBrand: string;
+  headerSubtitle: string;
+  
+  heroImage: string;
+  heroCampaignBadge: string;
+  heroHeadline: string;
+  heroSubtitle: string;
+  heroPromoBrand: string;
+  heroPromoTitle: string;
+  heroPromoDesc: string;
+  heroPromoImage: string;
+  heroCtaText: string;
+
+  infoTitle: string;
+  infoDescription: string;
+
+  faqTitle: string;
+  faqQ1: string;
+  faqA1: string;
+  faqQ2: string;
+  faqA2: string;
+
+  footerBrand: string;
+  footerSubtitle: string;
+  footerDesc: string;
+  footerAddress: string;
+  
+  phoneOrange: string;
+  phoneMoov: string;
+  phoneMtn: string;
+  whatsappHotline: string;
+  
+  momoWaveName: string;
+  momoWaveNum: string;
+  momoOrangeName: string;
+  momoOrangeNum: string;
+  momoMtnName: string;
+  momoMtnNum: string;
+  momoMoovName: string;
+  momoMoovNum: string;
+}
