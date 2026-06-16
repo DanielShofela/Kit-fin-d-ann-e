@@ -6,8 +6,8 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 
 // Shared interfaces
-import { Category, Kit, SiteSettings } from './types';
-import { fallbackCategories, fallbackKits, fallbackSettings } from './defaultData';
+import { Category, Kit, SiteSettings, CatalogProduct } from './types';
+import { fallbackCategories, fallbackKits, fallbackSettings, fallbackProducts } from './defaultData';
 
 // Firebase & Firestore setup
 import { 
@@ -29,6 +29,7 @@ export default function App() {
   // Application Data States
   const [categories, setCategories] = useState<Category[]>([]);
   const [kits, setKits] = useState<Kit[]>([]);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(fallbackSettings);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -61,9 +62,10 @@ export default function App() {
       setLoading(true);
       setErrorMsg('');
 
-      // Fetch categories, kits, and settings from Firebase Firestore
+      // Fetch categories, kits, products, and settings from Firebase Firestore
       const cats: Category[] = [];
       const kts: Kit[] = [];
+      const prods: CatalogProduct[] = [];
       let siteSettings: SiteSettings = { ...fallbackSettings };
 
       // Try fetching our customizable site settings first
@@ -100,6 +102,15 @@ export default function App() {
         handleFirestoreError(err, OperationType.GET, 'kits');
       }
 
+      try {
+        const prodSnap = await getDocs(collection(db, 'products'));
+        prodSnap.forEach((docSnap) => {
+          prods.push({ id: docSnap.id, ...docSnap.data() } as CatalogProduct);
+        });
+      } catch (err) {
+        console.warn("Impossible de charger les produits du catalogue, utilisation des valeurs de secours :", err);
+      }
+
       // If Firestore is empty (new setup), seed with fallback presets immediately so the site is instantly alive
       if (cats.length === 0) {
         console.log("Firestore est vide. Initialisation avec les kits et catégories de démonstration...");
@@ -123,12 +134,26 @@ export default function App() {
         }
       }
 
+      // If active prod collection is empty, seed it
+      if (prods.length === 0) {
+        console.log("Seeding default catalogue products...");
+        for (const item of fallbackProducts) {
+          try {
+            await setDoc(doc(db, 'products', item.id), item);
+            prods.push(item);
+          } catch (err) {
+            console.warn("Impossible d'ajouter le produit de demonstration:", item.id, err);
+          }
+        }
+      }
+
       // Sort lists by order property
       cats.sort((a, b) => (a.order || 0) - (b.order || 0));
       kts.sort((a, b) => (a.order || 0) - (b.order || 0));
 
       setCategories(cats);
       setKits(kts);
+      setProducts(prods);
       setSettings(siteSettings);
       setIsStaticMode(true); // Always keep in static/decentralized Firestore direct mode
       localStorage.setItem('penta_is_static_mode', 'true');
@@ -138,6 +163,7 @@ export default function App() {
       
       setCategories(fallbackCategories);
       setKits(fallbackKits);
+      setProducts(fallbackProducts);
       setSettings(fallbackSettings);
     } finally {
       setLoading(false);
@@ -352,6 +378,47 @@ export default function App() {
     }
   };
 
+  const handleAddProduct = async (prodData: Partial<CatalogProduct>): Promise<boolean> => {
+    const newId = `prod-${Date.now()}`;
+    const fullProd: CatalogProduct = {
+      id: newId,
+      category: prodData.category || 'Produits alimentaires',
+      subcategory: prodData.subcategory || '',
+      name: prodData.name || ''
+    };
+    try {
+      await setDoc(doc(db, 'products', newId), fullProd);
+      await fetchData();
+      return true;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `products/${newId}`);
+      return false;
+    }
+  };
+
+  const handleUpdateProduct = async (id: string, prodData: Partial<CatalogProduct>): Promise<boolean> => {
+    try {
+      const prodRef = doc(db, 'products', id);
+      await setDoc(prodRef, prodData, { merge: true });
+      await fetchData();
+      return true;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `products/${id}`);
+      return false;
+    }
+  };
+
+  const handleDeleteProduct = async (id: string): Promise<boolean> => {
+    try {
+      await deleteDoc(doc(db, 'products', id));
+      await fetchData();
+      return true;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `products/${id}`);
+      return false;
+    }
+  };
+
   const handleReorderKits = async (sortedIds: string[]): Promise<boolean> => {
     try {
       const batch = writeBatch(db);
@@ -552,6 +619,10 @@ export default function App() {
                   onUpdateKit={handleUpdateKit}
                   onDeleteKit={handleDeleteKit}
                   onReorderKits={handleReorderKits}
+                  products={products}
+                  onAddProduct={handleAddProduct}
+                  onUpdateProduct={handleUpdateProduct}
+                  onDeleteProduct={handleDeleteProduct}
                   settings={settings}
                   onUpdateSettings={handleUpdateSettings}
                 />

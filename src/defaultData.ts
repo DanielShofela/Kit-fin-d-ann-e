@@ -1,4 +1,4 @@
-import { Category, Kit, SiteSettings } from './types';
+import { Category, Kit, SiteSettings, CatalogProduct } from './types';
 
 export const fallbackCategories: Category[] = [
   {
@@ -279,4 +279,83 @@ export const fallbackSettings: SiteSettings = {
   momoMoovName: "🔵 MOOV MONEY",
   momoMoovNum: "01 00 82 57 81"
 };
+
+export const fallbackProducts: CatalogProduct[] = [
+  // 1. Produits alimentaires
+  // - Riz
+  { id: "p1", category: "Produits alimentaires", subcategory: "Riz", name: "Riz La Rizière 1 kg" },
+  { id: "p2", category: "Produits alimentaires", subcategory: "Riz", name: "Riz La Rizière 4,5 kg" },
+  { id: "p3", category: "Produits alimentaires", subcategory: "Riz", name: "Riz La Rizière 22,5 kg" },
+  // - Huiles
+  { id: "p4", category: "Produits alimentaires", subcategory: "Huiles", name: "Huile Aya 0,9 L" },
+  { id: "p5", category: "Produits alimentaires", subcategory: "Huiles", name: "Huile Aya 3 L" },
+  { id: "p6", category: "Produits alimentaires", subcategory: "Huiles", name: "Huile Aya 5 L" },
+  // - Conserves
+  { id: "p7", category: "Produits alimentaires", subcategory: "Conserves", name: "Tomate Alyssa 370 g" },
+  { id: "p8", category: "Produits alimentaires", subcategory: "Conserves", name: "Tomate Alyssa 2 kg" },
+  { id: "p9", category: "Produits alimentaires", subcategory: "Conserves", name: "Sardines Safi" },
+  { id: "p10", category: "Produits alimentaires", subcategory: "Conserves", name: "Petit pois" },
+  // - Produits laitiers
+  { id: "p11", category: "Produits alimentaires", subcategory: "Produits laitiers", name: "Lait concentré sucré" },
+  { id: "p12", category: "Produits alimentaires", subcategory: "Produits laitiers", name: "Lait en poudre en boîte" },
+  { id: "p13", category: "Produits alimentaires", subcategory: "Produits laitiers", name: "Lait en poudre chapelet" },
+  // - Féculents
+  { id: "p14", category: "Produits alimentaires", subcategory: "Féculents", name: "Spaghetti" },
+  // - Assaisonnements
+  { id: "p15", category: "Produits alimentaires", subcategory: "Assaisonnements", name: "Cube Maggi (plaquette)" },
+  // - Boissons
+  { id: "p16", category: "Produits alimentaires", subcategory: "Boissons", name: "Jus Presséa" },
+  { id: "p17", category: "Produits alimentaires", subcategory: "Boissons", name: "Sucrerie 1 L" },
+  { id: "p18", category: "Produits alimentaires", subcategory: "Boissons", name: "Sucrerie 1,5 L" },
+  { id: "p19", category: "Produits alimentaires", subcategory: "Boissons", name: "Pack de sucrerie 1 L" },
+  { id: "p20", category: "Produits alimentaires", subcategory: "Boissons", name: "Pack Coca-Cola 6 × 1 L" },
+  // - Produits frais
+  { id: "p21", category: "Produits alimentaires", subcategory: "Produits frais", name: "Poulets" },
+  { id: "p22", category: "Produits alimentaires", subcategory: "Produits frais", name: "Plaquette d'œufs" },
+  { id: "p23", category: "Produits alimentaires", subcategory: "Produits frais", name: "1/2 plaquette d'œufs" },
+
+  // 2. Articles ménagers
+  // - Vaisselle
+  { id: "p24", category: "Articles ménagers", subcategory: "Vaisselle", name: "Assiette de table" },
+  { id: "p25", category: "Articles ménagers", subcategory: "Vaisselle", name: "Kit de 6 assiettes cassables" },
+  { id: "p26", category: "Articles ménagers", subcategory: "Vaisselle", name: "Complet soupière 5 pièces" },
+  { id: "p27", category: "Articles ménagers", subcategory: "Vaisselle", name: "Complet soupière 6 pièces" },
+  { id: "p28", category: "Articles ménagers", subcategory: "Vaisselle", name: "Verre normal" },
+  { id: "p29", category: "Articles ménagers", subcategory: "Vaisselle", name: "Verre en coupe" },
+  // - Textile
+  { id: "p30", category: "Articles ménagers", subcategory: "Textile", name: "Complet de pagne" },
+
+  // 3. Électroménager
+  // - Cuisine
+  { id: "p31", category: "Électroménager", subcategory: "Cuisine", name: "Mixeur Foutou 3 L" },
+  { id: "p32", category: "Électroménager", subcategory: "Cuisine", name: "Mixeur Foutou 6 L" },
+  { id: "p33", category: "Électroménager", subcategory: "Cuisine", name: "Mixeur Foutou 12 L" },
+  { id: "p34", category: "Électroménager", subcategory: "Cuisine", name: "Mixeur 2 en 1" },
+  { id: "p35", category: "Électroménager", subcategory: "Cuisine", name: "Bouilloire électrique" },
+  { id: "p36", category: "Électroménager", subcategory: "Cuisine", name: "Air Fryer 6,5 L" },
+  { id: "p37", category: "Électroménager", subcategory: "Cuisine", name: "Air Fryer 9 L" },
+  { id: "p38", category: "Électroménager", subcategory: "Cuisine", name: "Air Fryer 10 L" },
+  { id: "p39", category: "Électroménager", subcategory: "Cuisine", name: "Mini cuisinière" },
+  { id: "p40", category: "Électroménager", subcategory: "Cuisine", name: "Gazinière 4 feux" },
+  // - Gaz
+  { id: "p41", category: "Électroménager", subcategory: "Gaz", name: "Gaz B6" },
+  { id: "p42", category: "Électroménager", subcategory: "Gaz", name: "Gaz B12" },
+  // - Froid
+  { id: "p43", category: "Électroménager", subcategory: "Froid", name: "Réfrigérateur" },
+  // - Lavage
+  { id: "p44", category: "Électroménager", subcategory: "Lavage", name: "Machine à laver 7 kg" },
+  // - Confort
+  { id: "p45", category: "Électroménager", subcategory: "Confort", name: "Ventilateur 15K" },
+  { id: "p46", category: "Électroménager", subcategory: "Confort", name: "Ventilateur 20K" },
+  { id: "p47", category: "Électroménager", subcategory: "Confort", name: "Chauffe-eau électrique" },
+  // - Literie
+  { id: "p48", category: "Électroménager", subcategory: "Literie", name: "Matelas orthopédique" },
+
+  // 4. Électronique
+  { id: "p49", category: "Électronique", subcategory: "Général", name: "TV 24 pouces" },
+  { id: "p50", category: "Électronique", subcategory: "Général", name: "TV 32 pouces simple" },
+  { id: "p51", category: "Électronique", subcategory: "Général", name: "Tablette enfant" },
+  { id: "p52", category: "Électronique", subcategory: "Général", name: "Tablette adulte" }
+];
+
 

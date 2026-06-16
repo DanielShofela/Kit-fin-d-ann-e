@@ -80,6 +80,18 @@
         "momoMoovName": { "type": "string" },
         "momoMoovNum": { "type": "string" }
       }
+    },
+    "CatalogProduct": {
+      "title": "CatalogProduct",
+      "description": "A single product/item that constitutes the kits. These are grouped by category and subcategory",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "category": { "type": "string" },
+        "subcategory": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["id", "category", "name"]
     }
   },
   "firestore": {
@@ -94,6 +106,10 @@
     "settings": {
       "schema": "SiteSettings",
       "description": "Global custom theme, text, configurations and info displays for the site"
+    },
+    "products": {
+      "schema": "CatalogProduct",
+      "description": "List of available items/products catalog to select when building kits"
     }
   }
 }

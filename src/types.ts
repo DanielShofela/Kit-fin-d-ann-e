@@ -67,3 +67,11 @@ export interface SiteSettings {
   momoMoovName: string;
   momoMoovNum: string;
 }
+
+export interface CatalogProduct {
+  id: string;
+  category: string;
+  subcategory?: string;
+  name: string;
+}
+

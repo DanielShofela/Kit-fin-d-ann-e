@@ -4,11 +4,12 @@ import {
   Settings, CheckCircle, RefreshCcw, Tag, ShoppingBag, Eye,
   Image as ImageIcon, HelpCircle, Layers, ClipboardList, Info
 } from 'lucide-react';
-import { Category, Kit, SiteSettings } from '../types';
+import { Category, Kit, SiteSettings, CatalogProduct } from '../types';
 
 interface AdminPanelProps {
   categories: Category[];
   kits: Kit[];
+  products?: CatalogProduct[];
   token: string | null;
   onLogin: (password: string) => Promise<boolean>;
   onRefreshData: () => void;
@@ -22,6 +23,10 @@ interface AdminPanelProps {
   onUpdateKit: (id: string, kit: Partial<Kit>) => Promise<boolean>;
   onDeleteKit: (id: string) => Promise<boolean>;
   onReorderKits: (sortedIds: string[]) => Promise<boolean>;
+  // Product Callbacks
+  onAddProduct: (prod: Partial<CatalogProduct>) => Promise<boolean>;
+  onUpdateProduct: (id: string, prod: Partial<CatalogProduct>) => Promise<boolean>;
+  onDeleteProduct: (id: string) => Promise<boolean>;
   // Site Customization Configs
   settings: SiteSettings;
   onUpdateSettings: (newSettings: Partial<SiteSettings>) => Promise<boolean>;
@@ -30,6 +35,7 @@ interface AdminPanelProps {
 export default function AdminPanel({
   categories,
   kits,
+  products = [],
   token,
   onLogin,
   onRefreshData,
@@ -41,6 +47,9 @@ export default function AdminPanel({
   onUpdateKit,
   onDeleteKit,
   onReorderKits,
+  onAddProduct,
+  onUpdateProduct,
+  onDeleteProduct,
   settings,
   onUpdateSettings
 }: AdminPanelProps) {
@@ -51,7 +60,7 @@ export default function AdminPanel({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<'categories' | 'kits' | 'settings'>('categories');
+  const [activeTab, setActiveTab] = useState<'categories' | 'kits' | 'settings' | 'products'>('categories');
 
   // Selected Category filter for Kits list
   const [selectedCatFilter, setSelectedCatFilter] = useState<string>('all');
@@ -83,6 +92,21 @@ export default function AdminPanel({
   const [productInput, setProductInput] = useState('');
   const [benefitInput, setBenefitInput] = useState('');
   const [imageInput, setImageInput] = useState('');
+  const [kitProdSearch, setKitProdSearch] = useState('');
+
+  // Editing Products in Catalog
+  const [isProdModalOpen, setIsProdModalOpen] = useState(false);
+  const [prodEditingId, setProdEditingId] = useState<string | null>(null); // null means adding
+  const [prodForm, setProdForm] = useState({
+    category: 'Produits alimentaires',
+    subcategory: '',
+    name: ''
+  });
+  const [isSavingProd, setIsSavingProd] = useState(false);
+
+  // Product Search & Filter
+  const [prodSearchQuery, setProdSearchQuery] = useState('');
+  const [selectedProdCatFilter, setSelectedProdCatFilter] = useState('Tous');
 
   // Settings customizable states
   const [settingsForm, setSettingsForm] = useState<SiteSettings>(settings);
@@ -453,6 +477,62 @@ export default function AdminPanel({
   };
 
 
+  const openProdModal = (prod?: CatalogProduct) => {
+    if (!prod) {
+      setProdEditingId(null);
+      setProdForm({
+        category: 'Produits alimentaires',
+        subcategory: '',
+        name: ''
+      });
+    } else {
+      setProdEditingId(prod.id);
+      setProdForm({
+        category: prod.category || 'Produits alimentaires',
+        subcategory: prod.subcategory || '',
+        name: prod.name || ''
+      });
+    }
+    setIsProdModalOpen(true);
+  };
+
+  const handleProdSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!prodForm.name.trim() || !prodForm.category.trim()) {
+      showStatus('Veuillez remplir le nom et la catégorie du produit.', 'error');
+      return;
+    }
+    setIsSavingProd(true);
+    let success = false;
+    if (prodEditingId === null) {
+      success = await onAddProduct(prodForm);
+      if (success) showStatus('Produit ajouté au catalogue !');
+    } else {
+      success = await onUpdateProduct(prodEditingId, prodForm);
+      if (success) showStatus('Produit mis à jour dans le catalogue !');
+    }
+    setIsSavingProd(false);
+    if (success) {
+      setIsProdModalOpen(false);
+      onRefreshData();
+    } else {
+      showStatus('Erreur lors de la sauvegarde du produit.', 'error');
+    }
+  };
+
+  const handleDeleteProdClick = async (id: string, name: string) => {
+    if (window.confirm(`Voulez-vous vraiment supprimer "${name}" du catalogue ?`)) {
+      const success = await onDeleteProduct(id);
+      if (success) {
+        showStatus('Produit supprimé du catalogue.');
+        onRefreshData();
+      } else {
+        showStatus('Erreur lors de la suppression.', 'error');
+      }
+    }
+  };
+
+
   // If no auth token, render secure login page
   if (!token) {
     return (
@@ -516,6 +596,16 @@ export default function AdminPanel({
     ? kits 
     : kits.filter(k => k.categoryId === selectedCatFilter);
 
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = 
+      (p.name || '').toLowerCase().includes(prodSearchQuery.toLowerCase()) ||
+      (p.category || '').toLowerCase().includes(prodSearchQuery.toLowerCase()) ||
+      (p.subcategory || '').toLowerCase().includes(prodSearchQuery.toLowerCase());
+    
+    if (selectedProdCatFilter === 'Tous') return matchesSearch;
+    return matchesSearch && p.category === selectedProdCatFilter;
+  });
+
   return (
     <div className="w-full min-h-screen bg-slate-50 pb-20">
       
@@ -554,44 +644,57 @@ export default function AdminPanel({
 
       {/* Navigation Tabs */}
       <div className="max-w-md mx-auto px-4 mt-6">
-        <div className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm flex">
+        <div className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-2 gap-1.5">
           <button
             id="tab_categories_btn"
             onClick={() => setActiveTab('categories')}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'categories' 
                 ? 'bg-[#0D47FF] text-white shadow-md' 
                 : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
-            <Layers className="w-4 h-4" />
-            <span>Catégories ({categories.length})</span>
+            <Layers className="w-3.5 h-3.5" />
+            <span className="truncate">Gérer Catégories ({categories.length})</span>
           </button>
           
           <button
             id="tab_kits_btn"
             onClick={() => setActiveTab('kits')}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'kits' 
                 ? 'bg-[#0D47FF] text-white shadow-md' 
-                : 'text-slate-600 hover:bg-slate-50'
+                : 'text-slate-680 hover:bg-slate-50'
             }`}
           >
-            <ClipboardList className="w-4 h-4" />
-            <span>Packs & Kits ({kits.length})</span>
+            <ClipboardList className="w-3.5 h-3.5" />
+            <span className="truncate">Gérer Kits ({kits.length})</span>
+          </button>
+
+          <button
+            id="tab_products_btn"
+            onClick={() => setActiveTab('products')}
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              activeTab === 'products' 
+                ? 'bg-[#0D47FF] text-white shadow-md' 
+                : 'text-slate-680 hover:bg-slate-50'
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span className="truncate">Catalogue ({products.length})</span>
           </button>
 
           <button
             id="tab_settings_btn"
             onClick={() => setActiveTab('settings')}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'settings' 
                 ? 'bg-[#0D47FF] text-white shadow-md' 
-                : 'text-slate-600 hover:bg-slate-50'
+                : 'text-slate-680 hover:bg-slate-50'
             }`}
           >
-            <Settings className="w-4 h-4" />
-            <span>Personnaliser</span>
+            <Settings className="w-3.5 h-3.5" />
+            <span className="truncate">Personnaliser</span>
           </button>
         </div>
       </div>
@@ -1338,6 +1441,106 @@ export default function AdminPanel({
           </form>
         )}
 
+        {/* TAB 4: PRODUCTS CATALOGUE */}
+        {activeTab === 'products' && (
+          <div className="space-y-4 animate-fade-in">
+            <div className="flex items-center justify-between px-1 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+              <div>
+                <h2 className="font-display font-black text-xs text-slate-800 uppercase tracking-wide">
+                  Catalogue Gérant
+                </h2>
+                <p className="text-[11px] text-slate-500 normal-case font-medium mt-0.5">
+                  Gérez les produits servant à composer vos kits
+                </p>
+              </div>
+              <button
+                id="add_catalog_product_btn"
+                onClick={() => openProdModal()}
+                className="bg-[#0D47FF] hover:bg-blue-700 text-white font-extrabold text-[11px] uppercase tracking-wider py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-all shadow-sm shadow-blue-500/10 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nouveau</span>
+              </button>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+              <input
+                type="text"
+                placeholder="🔍 Rechercher un produit, catégorie, marque..."
+                value={prodSearchQuery}
+                onChange={(e) => setProdSearchQuery(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-850 focus:outline-none placeholder:text-slate-400 font-medium normal-case"
+              />
+              
+              {/* Category Quick Filter badges */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {['Tous', 'Produits alimentaires', 'Articles ménagers', 'Électroménager', 'Électronique'].map((catName) => (
+                  <button
+                    key={catName}
+                    onClick={() => setSelectedProdCatFilter(catName)}
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer border ${
+                      selectedProdCatFilter === catName
+                        ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                        : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                    }`}
+                  >
+                    {catName === 'Tous' ? 'Tous' : catName}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Products List Grid */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-100 max-h-[60vh] overflow-y-auto">
+              {filteredProducts.length === 0 ? (
+                <div className="p-8 text-center text-slate-400">
+                  <ShoppingBag className="w-8 h-8 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
+                  <p className="text-xs font-bold uppercase tracking-wider">Aucun produit trouvé</p>
+                  <p className="text-[10px] text-slate-400 normal-case mt-1">Créez votre premier produit ou adaptez votre recherche.</p>
+                </div>
+              ) : (
+                filteredProducts.map((p) => (
+                  <div key={p.id} className="p-3 bg-white flex items-center justify-between hover:bg-slate-50 transition-all">
+                    <div className="min-w-0 pr-4">
+                      <h4 className="font-display font-bold text-xs text-slate-800 leading-snug normal-case">
+                        {p.name}
+                      </h4>
+                      <div className="flex items-center gap-1.5 mt-1 font-mono text-[9px] uppercase tracking-wider font-semibold">
+                        <span className="text-[#0D47FF] bg-blue-50 px-1.5 py-0.5 rounded">
+                          {p.category}
+                        </span>
+                        {p.subcategory && (
+                          <span className="text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                            {p.subcategory}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => openProdModal(p)}
+                        className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-850 transition-all cursor-pointer"
+                        title="Modifier"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProdClick(p.id, p.name)}
+                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* MODAL EDIT/ADD CATEGORY */}
@@ -1624,47 +1827,141 @@ export default function AdminPanel({
               </div>
 
               {/* Products included section */}
-              <div className="space-y-2 bg-slate-50 p-3 rounded-2xl border">
-                <label className="block tracking-wider text-slate-600">Produits Inclus dans la Caisse *</label>
+              {/* Products included section */}
+              <div className="space-y-3 bg-slate-50 p-3 rounded-2xl border">
+                <div className="flex justify-between items-center">
+                  <label className="block tracking-wider text-slate-600 font-bold">Produits dans le kit *</label>
+                  <span className="text-[10px] text-blue-600 font-extrabold font-mono">{kitForm.products.length} sélectionné(s)</span>
+                </div>
                 
-                {/* Product checklist */}
-                <div className="space-y-1.5 py-1 text-slate-800 text-xs">
-                  {kitForm.products.map((prod, pIdx) => (
-                    <div key={pIdx} className="flex justify-between items-center text-[11px] gap-2 p-1.5 rounded bg-white border">
-                      <span className="truncate max-w-[240px] font-medium leading-none">{prod}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveProductItem(pIdx)}
-                        className="text-red-500 font-bold hover:scale-105 shrink-0"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+                {/* Active Items list */}
+                <div className="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-white rounded-xl border border-slate-200">
+                  {kitForm.products.length === 0 ? (
+                    <span className="text-[10px] text-slate-400 font-medium self-center">Aucun produit inclus. Sélectionnez en dessous ou ajoutez-en manuellement.</span>
+                  ) : (
+                    kitForm.products.map((prodName, pIdx) => (
+                      <span key={pIdx} className="inline-flex items-center gap-1 bg-blue-50 text-[#0D47FF] border border-blue-150 px-2 py-0.5 rounded-lg text-[10px] font-bold normal-case">
+                        <span>{prodName}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setKitForm({
+                              ...kitForm,
+                              products: kitForm.products.filter(p => p !== prodName)
+                            });
+                          }}
+                          className="hover:text-red-500 font-extrabold text-[11px] ml-0.5"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))
+                  )}
                 </div>
 
-                {/* Add item */}
-                <div className="flex gap-2.5">
+                {/* DB Selector Box with Search */}
+                <div className="space-y-1.5 pt-2 border-t border-slate-200">
+                  <span className="text-[10px] font-extrabold tracking-wider text-slate-500 block">Choisir depuis le Catalogue Gérant</span>
+                  
+                  {/* Miniature search bar */}
                   <input
                     type="text"
-                    placeholder="Ex: Sac de Riz parfumé (25 Kg)..."
-                    value={productInput}
-                    onChange={(e) => setProductInput(e.target.value)}
-                    className="flex-1 bg-white border border-slate-250 rounded-lg px-2 text-xs focus:outline-none text-slate-800"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddProductItem();
-                      }
-                    }}
+                    placeholder="🔍 Filtrer le catalogue..."
+                    value={kitProdSearch}
+                    onChange={(e) => setKitProdSearch(e.target.value)}
+                    className="w-full bg-white border border-slate-250 rounded-lg px-2 py-1 text-[11px] focus:outline-none text-slate-800 normal-case"
                   />
-                  <button
-                    type="button"
-                    onClick={handleAddProductItem}
-                    className="bg-blue-600 text-white text-[10px] py-1 px-3.5 rounded-lg shrink-0 cursor-pointer"
-                  >
-                    Ajouter
-                  </button>
+
+                  {/* Scrollable grid of master catalog products */}
+                  <div className="max-h-36 overflow-y-auto border rounded-lg bg-white divide-y divide-slate-100 text-[10.5px]">
+                    {products.filter(p => 
+                      !kitProdSearch || 
+                      (p.name || '').toLowerCase().includes(kitProdSearch.toLowerCase()) ||
+                      (p.category || '').toLowerCase().includes(kitProdSearch.toLowerCase()) ||
+                      (p.subcategory || '').toLowerCase().includes(kitProdSearch.toLowerCase())
+                    ).map((p) => {
+                      const isSelected = kitForm.products.includes(p.name);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setKitForm({
+                                ...kitForm,
+                                products: kitForm.products.filter(item => item !== p.name)
+                              });
+                            } else {
+                              setKitForm({
+                                ...kitForm,
+                                products: [...kitForm.products, p.name]
+                              });
+                            }
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 flex items-center justify-between transition-all cursor-pointer ${
+                            isSelected 
+                              ? 'bg-blue-50/50 hover:bg-blue-50 text-blue-900 font-bold' 
+                              : 'hover:bg-slate-50 text-slate-700'
+                          }`}
+                        >
+                          <div className="truncate pr-2 normal-case">
+                            <span>{p.name}</span>
+                            <span className="block text-[8px] uppercase tracking-widest text-slate-400 font-medium mt-0.5">{p.category} {p.subcategory ? `• ${p.subcategory}` : ''}</span>
+                          </div>
+                          <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center shrink-0 ${
+                            isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300'
+                          }`}>
+                            {isSelected && <span className="text-[8px] font-black">✓</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Add Custom Fallback Item manually */}
+                <div className="space-y-1.5 pt-2 border-t border-slate-200">
+                  <span className="text-[10px] font-extrabold tracking-wider text-slate-500 block">Ou ajouter manuellement un produit sur mesure</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Ex: Sac de Riz parfumé (25 Kg)..."
+                      value={productInput}
+                      onChange={(e) => setProductInput(e.target.value)}
+                      className="flex-1 bg-white border border-slate-250 rounded-lg px-2 py-1 text-[11px] focus:outline-none text-slate-800 normal-case"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (productInput.trim()) {
+                            if (!kitForm.products.includes(productInput.trim())) {
+                              setKitForm({
+                                ...kitForm,
+                                products: [...kitForm.products, productInput.trim()]
+                              });
+                            }
+                            setProductInput('');
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (productInput.trim()) {
+                          if (!kitForm.products.includes(productInput.trim())) {
+                            setKitForm({
+                              ...kitForm,
+                              products: [...kitForm.products, productInput.trim()]
+                            });
+                          }
+                          setProductInput('');
+                        }
+                      }}
+                      className="bg-[#0D47FF] text-white text-[10px] px-3 rounded-lg shrink-0 cursor-pointer font-bold hover:bg-blue-700"
+                    >
+                      Ajouter
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1735,6 +2032,74 @@ export default function AdminPanel({
                 Sauvegarder le Kit public
               </button>
 
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT/ADD CATALOG PRODUCT */}
+      {isProdModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl border p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b">
+              <h3 className="font-display font-extrabold text-sm text-slate-800 uppercase tracking-wide">
+                {prodEditingId === null ? 'Nouveau Produit' : 'Modifier le Produit'}
+              </h3>
+              <button onClick={() => setIsProdModalOpen(false)} className="p-1 rounded-full text-slate-400 hover:bg-slate-100">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleProdSubmit} className="space-y-4 text-xs font-semibold uppercase text-slate-500">
+              {/* Product Name */}
+              <div className="space-y-1.5">
+                <label className="block tracking-wider">Nom du Produit *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Riz La Rizière 4.5 kg..."
+                  value={prodForm.name}
+                  onChange={(e) => setProdForm({ ...prodForm, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-800 normal-case focus:outline-none"
+                />
+              </div>
+
+              {/* Product Category select */}
+              <div className="space-y-1.5">
+                <label className="block tracking-wider">Catégorie Majeure *</label>
+                <select
+                  value={prodForm.category}
+                  onChange={(e) => setProdForm({ ...prodForm, category: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-800 focus:outline-none uppercase"
+                >
+                  <option value="Produits alimentaires">Produits alimentaires</option>
+                  <option value="Articles ménagers">Articles ménagers</option>
+                  <option value="Électroménager">Électroménager</option>
+                  <option value="Électronique">Électronique</option>
+                </select>
+              </div>
+
+              {/* Product Subcategory */}
+              <div className="space-y-1.5">
+                <label className="block tracking-wider">Sous-Catégorie (Optionnel)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Riz, Huiles, Vaisselle, Froid..."
+                  value={prodForm.subcategory}
+                  onChange={(e) => setProdForm({ ...prodForm, subcategory: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-800 normal-case focus:outline-none"
+                />
+              </div>
+
+              {/* Submit Trigger */}
+              <button
+                id="save_catalog_product_btn"
+                type="submit"
+                disabled={isSavingProd}
+                className="w-full bg-[#0D47FF] hover:bg-blue-700 disabled:bg-slate-400 text-white font-display font-extrabold py-3.5 px-4 rounded-xl shadow-md cursor-pointer text-center uppercase tracking-wider mt-5"
+              >
+                {isSavingProd ? 'Sauvegarde...' : 'Sauvegarder dans le Catalogue'}
+              </button>
             </form>
           </div>
         </div>
