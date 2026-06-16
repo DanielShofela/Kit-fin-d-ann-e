@@ -27,6 +27,7 @@ interface AdminPanelProps {
   onAddProduct: (prod: Partial<CatalogProduct>) => Promise<boolean>;
   onUpdateProduct: (id: string, prod: Partial<CatalogProduct>) => Promise<boolean>;
   onDeleteProduct: (id: string) => Promise<boolean>;
+  onSeedProducts?: () => Promise<boolean>;
   // Site Customization Configs
   settings: SiteSettings;
   onUpdateSettings: (newSettings: Partial<SiteSettings>) => Promise<boolean>;
@@ -50,6 +51,7 @@ export default function AdminPanel({
   onAddProduct,
   onUpdateProduct,
   onDeleteProduct,
+  onSeedProducts,
   settings,
   onUpdateSettings
 }: AdminPanelProps) {
@@ -1450,17 +1452,37 @@ export default function AdminPanel({
                   Catalogue Gérant
                 </h2>
                 <p className="text-[11px] text-slate-500 normal-case font-medium mt-0.5">
-                  Gérez les produits servant à composer vos kits
+                  Gérez les produits servant à composer vos kits ({products.length} produits)
                 </p>
               </div>
-              <button
-                id="add_catalog_product_btn"
-                onClick={() => openProdModal()}
-                className="bg-[#0D47FF] hover:bg-blue-700 text-white font-extrabold text-[11px] uppercase tracking-wider py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-all shadow-sm shadow-blue-500/10 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Nouveau</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                {onSeedProducts && products.length === 0 && (
+                  <button
+                    onClick={async () => {
+                      if (window.confirm("Voulez-vous importer la liste complète des produits et catégories par défaut de Penta Gad (Riz, Huiles, Conserves, Électroménager...) dans votre catalogue ?")) {
+                        const success = await onSeedProducts();
+                        if (success) {
+                          showStatus("Catalogue de démonstration importé avec succès !");
+                        } else {
+                          showStatus("Erreur lors de l'importation.", "error");
+                        }
+                      }
+                    }}
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[11px] uppercase tracking-wider py-2 px-3 rounded-xl flex items-center gap-1 transition-all cursor-pointer shadow-sm shadow-amber-500/10"
+                  >
+                    <RefreshCcw className="w-3.5 h-3.5" />
+                    <span>Importer Défauts</span>
+                  </button>
+                )}
+                <button
+                  id="add_catalog_product_btn"
+                  onClick={() => openProdModal()}
+                  className="bg-[#0D47FF] hover:bg-blue-700 text-white font-extrabold text-[11px] uppercase tracking-wider py-2 px-3.5 rounded-xl flex items-center gap-1.5 transition-all shadow-sm shadow-blue-500/10 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nouveau</span>
+                </button>
+              </div>
             </div>
 
             {/* Search and Filters */}
@@ -1494,10 +1516,30 @@ export default function AdminPanel({
             {/* Products List Grid */}
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-100 max-h-[60vh] overflow-y-auto">
               {filteredProducts.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  <ShoppingBag className="w-8 h-8 mx-auto text-slate-300 mb-2 stroke-[1.5]" />
-                  <p className="text-xs font-bold uppercase tracking-wider">Aucun produit trouvé</p>
-                  <p className="text-[10px] text-slate-400 normal-case mt-1">Créez votre premier produit ou adaptez votre recherche.</p>
+                <div className="p-8 text-center text-slate-400 space-y-3">
+                  <ShoppingBag className="w-8 h-8 mx-auto text-slate-300 stroke-[1.5]" />
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider">Aucun produit trouvé</p>
+                    <p className="text-[10px] text-slate-400 normal-case mt-1">Créez votre premier produit ou adaptez votre recherche.</p>
+                  </div>
+                  {onSeedProducts && products.length === 0 && (
+                    <button
+                      onClick={async () => {
+                        if (window.confirm("Voulez-vous importer tous les produits de démonstration par défaut de Penta Gad maintenant ?")) {
+                          const success = await onSeedProducts();
+                          if (success) {
+                            showStatus("Catalogue importé avec succès !");
+                          } else {
+                            showStatus("Erreur lors de l'importation.", "error");
+                          }
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-extrabold uppercase tracking-wider py-2 px-4 rounded-xl cursor-pointer shadow-sm shadow-amber-500/10"
+                    >
+                      <RefreshCcw className="w-3.5 h-3.5" />
+                      <span>Importer la liste par défaut</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 filteredProducts.map((p) => (

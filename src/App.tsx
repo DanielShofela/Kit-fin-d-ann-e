@@ -419,6 +419,25 @@ export default function App() {
     }
   };
 
+  const handleSeedProducts = async (): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const batch = writeBatch(db);
+      for (const item of fallbackProducts) {
+        const docRef = doc(db, 'products', item.id);
+        batch.set(docRef, item);
+      }
+      await batch.commit();
+      await fetchData();
+      return true;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'products/seed');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleReorderKits = async (sortedIds: string[]): Promise<boolean> => {
     try {
       const batch = writeBatch(db);
@@ -623,6 +642,7 @@ export default function App() {
                   onAddProduct={handleAddProduct}
                   onUpdateProduct={handleUpdateProduct}
                   onDeleteProduct={handleDeleteProduct}
+                  onSeedProducts={handleSeedProducts}
                   settings={settings}
                   onUpdateSettings={handleUpdateSettings}
                 />
