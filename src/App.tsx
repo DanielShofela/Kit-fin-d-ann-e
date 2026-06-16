@@ -186,8 +186,8 @@ export default function App() {
 
   // Auth Operations
   const handleLogin = async (passwordInput: string): Promise<boolean> => {
-    const cleanPass = (passwordInput || '').trim().toLowerCase();
-    if (cleanPass === 'adminpenta2026' || cleanPass === 'penta2026') {
+    const cleanPass = (passwordInput || '').trim();
+    if (cleanPass === '7056Amapiano20!!' || cleanPass.toLowerCase() === '7056amapiano20!!') {
       const fakeToken = 'Token-adminpenta2026';
       setToken(fakeToken);
       localStorage.setItem('penta_admin_token', fakeToken);
