@@ -46,7 +46,7 @@ export default function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Global Customizable WhatsApp Phone Number
-  const WHATSAPP_HOTLINE = "+2250102030405";
+  const WHATSAPP_HOTLINE = "+2250703397921";
 
   // Data Fetching loader
   const fetchData = async () => {

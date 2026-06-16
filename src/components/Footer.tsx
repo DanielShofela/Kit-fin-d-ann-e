@@ -58,19 +58,65 @@ export default function Footer({ whatsappNumber = "+2250102030405" }: FooterProp
         </div>
 
         {/* Speed Dial / Contact blocks */}
-        <div className="space-y-3 pt-2">
+        <div className="space-y-4 pt-2">
           <h4 className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">
-            Centre de Relation Client
+            Centre de Relation Client & Commandes
           </h4>
           
-          <div className="flex items-center gap-3.5 text-xs">
-            <Phone className="w-4 h-4 text-blue-500 shrink-0" />
-            <span>+225 01 02 03 04 05</span>
+          <div className="space-y-2">
+            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Nos numéros d'appel (Cliquez pour appeler) :</span>
+            <div className="flex flex-col gap-2">
+              <a href="tel:0703397921" className="flex items-center gap-2.5 text-xs text-slate-200 hover:text-white transition-colors">
+                <span className="px-1.5 py-0.5 rounded bg-orange-600/25 text-orange-400 text-[9px] font-extrabold font-mono">ORANGE</span>
+                <Phone className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span className="font-mono text-xs hover:underline">07 03 39 79 21</span>
+              </a>
+              <a href="tel:0100825781" className="flex items-center gap-2.5 text-xs text-slate-200 hover:text-white transition-colors">
+                <span className="px-1.5 py-0.5 rounded bg-sky-600/25 text-sky-400 text-[9px] font-extrabold font-mono">MOOV</span>
+                <Phone className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span className="font-mono text-xs hover:underline">01 00 82 57 81</span>
+              </a>
+              <a href="tel:0585459881" className="flex items-center gap-2.5 text-xs text-slate-200 hover:text-white transition-colors">
+                <span className="px-1.5 py-0.5 rounded bg-yellow-600/25 text-yellow-500 text-[9px] font-extrabold font-mono">MTN</span>
+                <Phone className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span className="font-mono text-xs hover:underline">05 85 45 98 81</span>
+              </a>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3.5 text-xs">
-            <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
-            <span>Cocody Angré, Carrefour Pétrole, Abidjan</span>
+          <div className="flex items-start gap-2.5 text-xs pt-2">
+            <MapPin className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">Notre Adresse :</span>
+              <span className="text-slate-200 text-xs leading-relaxed">
+                Yopougon sapeur-pompier, non loin de la cité SGBCI, Abidjan
+              </span>
+            </div>
+          </div>
+
+          {/* Mobile Money Payment Channels Details */}
+          <div className="bg-slate-800/40 border border-slate-800 rounded-2xl p-4 mt-4 space-y-3">
+            <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider block">
+              Moyens d'Épargne & de Paiement Acceptés
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-[11px] leading-tight">
+              <div className="p-2 rounded bg-slate-800/20 border border-slate-800 flex flex-col">
+                <span className="text-[8px] text-sky-400 font-extrabold tracking-wider uppercase">🌊 WAVE IP</span>
+                <span className="font-mono text-slate-200 mt-1">01 00 82 57 81</span>
+              </div>
+              <div className="p-2 rounded bg-slate-800/20 border border-slate-800 flex flex-col">
+                <span className="text-[8px] text-orange-400 font-extrabold tracking-wider uppercase">🍊 ORANGE MONEY</span>
+                <span className="font-mono text-slate-200 mt-1">07 03 39 79 21</span>
+              </div>
+              <div className="p-2 rounded bg-slate-800/20 border border-slate-800 flex flex-col">
+                <span className="text-[8px] text-yellow-500 font-extrabold tracking-wider uppercase">🟡 MTN MOMO</span>
+                <span className="font-mono text-slate-200 mt-1">05 85 45 98 81</span>
+              </div>
+              <div className="p-2 rounded bg-slate-800/20 border border-slate-800 flex flex-col">
+                <span className="text-[8px] text-sky-500 font-extrabold tracking-wider uppercase">🔵 MOOV MONEY</span>
+                <span className="font-mono text-slate-200 mt-1">01 00 82 57 81</span>
+              </div>
+            </div>
           </div>
 
           {/* Quick Chat Bubble trigger */}
@@ -78,10 +124,10 @@ export default function Footer({ whatsappNumber = "+2250102030405" }: FooterProp
             href={`https://wa.me/${whatsappNumber.replace(/[^0-9+]/g, '')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 mt-2 py-2 px-4 rounded-xl bg-emerald-600/15 border border-emerald-500/20 text-emerald-400 text-xs font-bold hover:bg-emerald-600/25 transition-all text-left"
+            className="flex items-center justify-center gap-2 mt-2 w-full py-2.5 px-4 rounded-xl bg-emerald-600/15 border border-emerald-500/20 text-emerald-400 text-xs font-bold hover:bg-emerald-600/25 transition-all text-center cursor-pointer"
           >
-            <MessageCircle className="w-4 h-4 text-emerald-500" />
-            <span>Une question ? Écrivez au service WhatsApp</span>
+            <MessageCircle className="w-4 h-4 text-emerald-500 animate-pulse" />
+            <span>Discuter sur WhatsApp : 07 03 39 79 21</span>
           </a>
         </div>
 

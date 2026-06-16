@@ -224,7 +224,7 @@ Adresse : ${formData.address}`;
               <input
                 type="text"
                 required
-                placeholder="Ex: Cocody Angré"
+                placeholder="Ex: Yopougon Maroc"
                 value={formData.commune}
                 onChange={(e) => setFormData({ ...formData, commune: e.target.value })}
                 className={`w-full bg-slate-50 border rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400 ${
@@ -243,7 +243,7 @@ Adresse : ${formData.address}`;
             <input
               type="text"
               required
-              placeholder="Ex: Cité Bel Horizon, Villa 45, Carrefour Rose"
+              placeholder="Ex: Sapeur-pompier, non loin de la cité SGBCI"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               className={`w-full bg-slate-50 border rounded-xl px-3.5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 placeholder:text-slate-400 ${
