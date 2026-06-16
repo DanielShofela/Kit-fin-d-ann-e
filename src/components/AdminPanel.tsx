@@ -141,40 +141,15 @@ export default function AdminPanel({
       });
 
       let rawBase64 = await base64Promise;
-      // Compress image client side to keep Firestore document size tiny
+      // Compress image client-side to keep Firestore document size small.
+      // Returning base64 directly ensures images persist permanently in Firestore
+      // and display flawlessly across dev, preview, or shared environments!
       const compressedBase64 = await compressImage(rawBase64);
-
-      try {
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: file.name,
-            type: 'image/jpeg',
-            data: compressedBase64
-          })
-        });
-
-        if (!res.ok) {
-          throw new Error('Server upload offline or rejected');
-        }
-
-        const data = await res.json();
-        setIsUploading(false);
-        return data.url;
-      } catch (uploadErr) {
-        console.warn("L'envoi vers l'API serveur a échoué (hébergement statique). Utilisation du stockage base64 direct:", uploadErr);
-        // On static hosting (Netlify), we fall back to storing the compressed base64 directly in Firestore
-        setIsUploading(false);
-        showStatus('Image traitée et stockée localement dans la base de données !');
-        return compressedBase64;
-      }
+      setIsUploading(false);
+      return compressedBase64;
     } catch (err: any) {
       console.error(err);
-      showStatus(err.message || 'Erreur lors du traitement de l’image', 'error');
+      showStatus(err.message || "Erreur lors du traitement de l'image", 'error');
       setIsUploading(false);
       return null;
     }

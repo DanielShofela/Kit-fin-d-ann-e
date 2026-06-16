@@ -287,6 +287,9 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Serve uploaded images statically
 app.use('/data/uploads', express.static(UPLOADS_DIR));
 
+// Serve source assets statically to prevent broken references in compiled production builds
+app.use('/src/assets', express.static(path.join(process.cwd(), 'src', 'assets')));
+
 // Load initial database
 readDB();
 
