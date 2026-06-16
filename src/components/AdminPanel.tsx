@@ -102,7 +102,8 @@ export default function AdminPanel({
   const [prodForm, setProdForm] = useState({
     category: 'Produits alimentaires',
     subcategory: '',
-    name: ''
+    name: '',
+    image: ''
   });
   const [isSavingProd, setIsSavingProd] = useState(false);
 
@@ -485,14 +486,16 @@ export default function AdminPanel({
       setProdForm({
         category: 'Produits alimentaires',
         subcategory: '',
-        name: ''
+        name: '',
+        image: ''
       });
     } else {
       setProdEditingId(prod.id);
       setProdForm({
         category: prod.category || 'Produits alimentaires',
         subcategory: prod.subcategory || '',
-        name: prod.name || ''
+        name: prod.name || '',
+        image: prod.image || ''
       });
     }
     setIsProdModalOpen(true);
@@ -1543,20 +1546,30 @@ export default function AdminPanel({
                 </div>
               ) : (
                 filteredProducts.map((p) => (
-                  <div key={p.id} className="p-3 bg-white flex items-center justify-between hover:bg-slate-50 transition-all">
-                    <div className="min-w-0 pr-4">
-                      <h4 className="font-display font-bold text-xs text-slate-800 leading-snug normal-case">
-                        {p.name}
-                      </h4>
-                      <div className="flex items-center gap-1.5 mt-1 font-mono text-[9px] uppercase tracking-wider font-semibold">
-                        <span className="text-[#0D47FF] bg-blue-50 px-1.5 py-0.5 rounded">
-                          {p.category}
-                        </span>
-                        {p.subcategory && (
-                          <span className="text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                            {p.subcategory}
-                          </span>
+                  <div key={p.id} className="p-3 bg-white flex items-center justify-between hover:bg-slate-50 transition-all border-b border-slate-100 last:border-b-0 animate-fade-in">
+                    <div className="flex items-center gap-3 min-w-0 pr-4 text-left">
+                      {/* Product Image Thumbnail */}
+                      <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-150 overflow-hidden shrink-0 flex items-center justify-center">
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <ShoppingBag className="w-4 h-4 text-slate-350" />
                         )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-display font-bold text-xs text-slate-800 leading-snug normal-case">
+                          {p.name}
+                        </h4>
+                        <div className="flex items-center gap-1.5 mt-1 font-mono text-[9px] uppercase tracking-wider font-semibold">
+                          <span className="text-[#0D47FF] bg-blue-50 px-1.5 py-0.5 rounded">
+                            {p.category}
+                          </span>
+                          {p.subcategory && (
+                            <span className="text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                              {p.subcategory}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
@@ -1922,40 +1935,63 @@ export default function AdminPanel({
                       (p.category || '').toLowerCase().includes(kitProdSearch.toLowerCase()) ||
                       (p.subcategory || '').toLowerCase().includes(kitProdSearch.toLowerCase())
                     ).map((p) => {
-                      const isSelected = kitForm.products.includes(p.name);
+                      const occurrences = kitForm.products.filter(item => item === p.name).length;
+                      const hasInc = occurrences > 0;
                       return (
-                        <button
+                        <div
                           key={p.id}
-                          type="button"
-                          onClick={() => {
-                            if (isSelected) {
-                              setKitForm({
-                                ...kitForm,
-                                products: kitForm.products.filter(item => item !== p.name)
-                              });
-                            } else {
-                              setKitForm({
-                                ...kitForm,
-                                products: [...kitForm.products, p.name]
-                              });
-                            }
-                          }}
-                          className={`w-full text-left px-2.5 py-1.5 flex items-center justify-between transition-all cursor-pointer ${
-                            isSelected 
-                              ? 'bg-blue-50/50 hover:bg-blue-50 text-blue-900 font-bold' 
-                              : 'hover:bg-slate-50 text-slate-700'
+                          className={`w-full px-2.5 py-1.5 flex items-center justify-between transition-all border-b border-slate-100 last:border-0 ${
+                            hasInc 
+                              ? 'bg-blue-50/20 text-blue-900 font-bold' 
+                              : 'text-slate-700'
                           }`}
                         >
-                          <div className="truncate pr-2 normal-case">
-                            <span>{p.name}</span>
-                            <span className="block text-[8px] uppercase tracking-widest text-slate-400 font-medium mt-0.5">{p.category} {p.subcategory ? `• ${p.subcategory}` : ''}</span>
+                          <div className="truncate pr-2 normal-case text-left flex-1 min-w-0">
+                            <span className="font-semibold block leading-tight text-[11px] text-slate-800">{p.name}</span>
+                            <span className="block text-[8px] uppercase tracking-widest text-[#0D47FF] font-black mt-0.5">
+                              {p.category} {p.subcategory ? `• ${p.subcategory}` : ''}
+                            </span>
                           </div>
-                          <div className={`w-3.5 h-3.5 rounded-md border flex items-center justify-center shrink-0 ${
-                            isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300'
-                          }`}>
-                            {isSelected && <span className="text-[8px] font-black">✓</span>}
+                          
+                          {/* Counter selector logic */}
+                          <div className="flex items-center gap-1 shrink-0 ml-2">
+                            {hasInc && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const idx = kitForm.products.indexOf(p.name);
+                                  if (idx !== -1) {
+                                    const updated = [...kitForm.products];
+                                    updated.splice(idx, 1);
+                                    setKitForm({ ...kitForm, products: updated });
+                                  }
+                                }}
+                                className="w-5 h-5 bg-blue-100/80 hover:bg-blue-200 text-[#0D47FF] hover:text-blue-800 border border-blue-200/50 rounded-md flex items-center justify-center font-black text-xs cursor-pointer select-none"
+                              >
+                                -
+                              </button>
+                            )}
+                            
+                            {hasInc && (
+                              <span className="text-[10px] font-mono font-black text-slate-800 w-4 text-center">
+                                {occurrences}
+                              </span>
+                            )}
+                            
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setKitForm({
+                                  ...kitForm,
+                                  products: [...kitForm.products, p.name]
+                                });
+                              }}
+                              className="w-5 h-5 bg-[#0D47FF] hover:bg-blue-700 text-white rounded-md flex items-center justify-center font-black text-xs cursor-pointer select-none"
+                            >
+                              +
+                            </button>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -2131,6 +2167,23 @@ export default function AdminPanel({
                   onChange={(e) => setProdForm({ ...prodForm, subcategory: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-800 normal-case focus:outline-none"
                 />
+              </div>
+
+              {/* Product Image URL */}
+              <div className="space-y-1.5">
+                <label className="block tracking-wider">Image (URL optionnelle)</label>
+                <input
+                  type="text"
+                  placeholder="https://images.unsplash.com/..."
+                  value={prodForm.image}
+                  onChange={(e) => setProdForm({ ...prodForm, image: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-800 normal-case focus:outline-none"
+                />
+                {prodForm.image && (
+                  <div className="mt-2 h-14 w-14 rounded-xl border overflow-hidden bg-slate-50 flex items-center justify-center">
+                    <img src={prodForm.image} alt="Aperçu produit" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                  </div>
+                )}
               </div>
 
               {/* Submit Trigger */}

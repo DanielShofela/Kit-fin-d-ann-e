@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { ArrowLeft, Check, Sparkles, ShieldCheck, Truck, Calendar, DollarSign, ChevronRight, HelpCircle } from 'lucide-react';
-import { Kit, Category } from '../types';
+import { ArrowLeft, Check, Sparkles, ShieldCheck, Truck, Calendar, DollarSign, ChevronRight, HelpCircle, ShoppingBag } from 'lucide-react';
+import { Kit, Category, CatalogProduct } from '../types';
 import { motion } from 'motion/react';
 
 interface KitDetailsViewProps {
   kit: Kit;
   category: Category;
+  products?: CatalogProduct[];
   onBack: () => void;
   onChooseKit: () => void;
 }
 
-export default function KitDetailsView({ kit, category, onBack, onChooseKit }: KitDetailsViewProps) {
+export default function KitDetailsView({ kit, category, products = [], onBack, onChooseKit }: KitDetailsViewProps) {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   // Fallback for missing images
@@ -58,108 +59,101 @@ export default function KitDetailsView({ kit, category, onBack, onChooseKit }: K
             </span>
           </div>
 
-          {/* Inline Slider Thumbnails (If more than 1 image) */}
+          {/* Thumbnails list if there are multiple images */}
           {kitImages.length > 1 && (
-            <div className="flex gap-2.5 mt-3 px-1 overflow-x-auto no-scrollbar pb-1">
+            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
               {kitImages.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImageIdx(idx)}
-                  className={`relative w-14 h-14 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
-                    activeImageIdx === idx 
-                      ? 'border-[#0D47FF] ring-2 ring-[#0D47FF]/20' 
-                      : 'border-slate-100 opacity-70 hover:opacity-100'
+                  className={`w-14 h-14 rounded-xl overflow-hidden border shrink-0 transition-all cursor-pointer ${
+                    activeImageIdx === idx ? 'ring-2 ring-[#0D47FF] border-transparent scale-95' : 'border-slate-200 opacity-60'
                   }`}
                 >
-                  <img
-                    src={img}
-                    alt={`Preview ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
+                  <img src={img} alt={`Miniature ${idx}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 </button>
               ))}
             </div>
           )}
-        </div>
 
-        {/* Essential Pricing Details Banner */}
-        <div className="mt-5 bg-gradient-to-br from-[#0D47FF] to-[#2F6BFF] p-5 rounded-2.5xl text-white shadow-md shadow-blue-500/10 relative overflow-hidden">
-          {/* Background vector spark */}
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <DollarSign className="w-32 h-32 -mr-10 -mt-10" />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-yellow-300 tracking-wider">
-                Montant de la Contribution
-              </span>
-              <span className="text-2xl font-black font-mono mt-0.5">
-                {kit.dailyAmount} <span className="text-xs font-normal text-white/80">/ jour</span>
-              </span>
+          {/* Quick Stats Block inside gallery card */}
+          <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-center text-xs">
+            <div className="bg-blue-50/40 hover:bg-blue-50/70 p-2.5 rounded-xl border border-blue-100/30 transition-all">
+              <span className="text-slate-400 font-bold block text-[9px] uppercase tracking-wider">Acompte</span>
+              <span className="font-extrabold text-[#0D47FF] font-mono text-xs">{kit.dailyAmount} / jour</span>
             </div>
-
-            {kit.totalValue && (
-              <div className="border-l border-white/20 pl-4 flex flex-col items-end">
-                <span className="text-[10px] uppercase font-bold text-white/70 tracking-wider">
-                  Valeur totale du Pack
-                </span>
-                <span className="text-sm font-extrabold font-mono text-white mt-1">
-                  {kit.totalValue}
-                </span>
-              </div>
-            )}
+            <div className="bg-emerald-50/40 hover:bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-100/30 transition-all">
+              <span className="text-slate-400 font-bold block text-[9px] uppercase tracking-wider">Valeur Totale</span>
+              <span className="font-extrabold text-emerald-600 font-mono text-xs">{kit.totalValue || "N/A"}</span>
+            </div>
           </div>
         </div>
 
         {/* Included Products List */}
-         <div className="mt-5 bg-white rounded-2.5xl p-5 shadow-sm border border-slate-100">
-           <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
-             <div className="w-1.5 h-4.5 bg-[#0D47FF] rounded-full" />
-             <h3 className="font-display font-extrabold text-[#111] text-sm uppercase tracking-wide">
-               Produits Inclus dans le Pack
-             </h3>
-           </div>
+        <div className="mt-5 bg-white rounded-2.5xl p-5 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+            <div className="w-1.5 h-4.5 bg-[#0D47FF] rounded-full" />
+            <h3 className="font-display font-extrabold text-[#111] text-sm uppercase tracking-wide">
+              Produits Inclus dans le Pack
+            </h3>
+          </div>
 
-           {kit.products && kit.products.length > 0 ? (
-             <div className="space-y-3">
-               {kit.products.map((prod, idx) => (
-                 <div key={idx} className="flex items-start gap-3 bg-slate-50/50 hover:bg-blue-50/20 p-2.5 rounded-xl border border-slate-100/50 transition-colors">
-                   <div className="w-5 h-5 rounded-full bg-blue-50 text-[#0D47FF] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 border border-blue-100">
-                     {idx + 1}
-                   </div>
-                   <span className="text-xs text-slate-700 font-medium leading-[1.4]">{prod}</span>
-                 </div>
-               ))}
-             </div>
-           ) : (
-             <p className="text-xs text-slate-400">Aucun produit listé dans ce pack.</p>
-           )}
-         </div>
+          {kit.products && kit.products.length > 0 ? (
+            <div className="space-y-3">
+              {kit.products.map((prod, idx) => {
+                const matched = (products || []).find(p => p.name.trim().toLowerCase() === prod.trim().toLowerCase());
+                return (
+                  <div key={idx} className="flex items-center gap-3 bg-slate-50/50 hover:bg-blue-50/20 p-2.5 rounded-xl border border-slate-100/50 transition-colors">
+                    {/* Image thumbnail or number bubble */}
+                    {matched && matched.image ? (
+                      <div className="w-10 h-10 rounded-lg border overflow-hidden bg-white shrink-0 flex items-center justify-center">
+                        <img src={matched.image} alt={prod} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg border bg-blue-50/50 text-[#0D47FF] flex items-center justify-center text-[10px] font-black shrink-0">
+                        {idx + 1}
+                      </div>
+                    )}
+                    
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs text-slate-800 font-semibold leading-tight block">{prod}</span>
+                      {matched?.subcategory && (
+                        <span className="text-[9px] text-slate-400 font-mono font-medium tracking-wide block mt-0.5 uppercase">
+                          {matched.category} • {matched.subcategory}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">Aucun produit listé dans ce pack.</p>
+          )}
+        </div>
 
         {/* Benefits Column */}
-         <div className="mt-5 bg-white rounded-2.5xl p-5 shadow-sm border border-slate-100">
-           <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
-             <div className="w-1.5 h-4.5 bg-amber-500 rounded-full" />
-             <h3 className="font-display font-extrabold text-[#111] text-sm uppercase tracking-wide">
-               Pourquoi Choisir ce Kit ?
-             </h3>
-           </div>
+        <div className="mt-5 bg-white rounded-2.5xl p-5 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4">
+            <div className="w-1.5 h-4.5 bg-amber-500 rounded-full" />
+            <h3 className="font-display font-extrabold text-[#111] text-sm uppercase tracking-wide">
+              Pourquoi Choisir ce Kit ?
+            </h3>
+          </div>
 
-           {kit.benefits && kit.benefits.length > 0 ? (
-             <div className="space-y-2.5">
-               {kit.benefits.map((benefit, idx) => (
-                 <div key={idx} className="flex items-start gap-2.5">
-                   <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                   <span className="text-xs text-slate-600 leading-[1.4]">{benefit}</span>
-                 </div>
-               ))}
-             </div>
-           ) : (
-             <p className="text-xs text-slate-400">Profitez de la fiabilité garantie et du suivi Penta Gad Distribution.</p>
-           )}
-         </div>
+          {kit.benefits && kit.benefits.length > 0 ? (
+            <div className="space-y-2.5">
+              {kit.benefits.map((benefit, idx) => (
+                <div key={idx} className="flex items-start gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="text-xs text-slate-600 leading-[1.4]">{benefit}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">Profitez de la fiabilité garantie et du suivi Penta Gad Distribution.</p>
+          )}
+        </div>
 
         {/* Delivery / Terms details Block */}
         <div className="mt-5 bg-slate-100/80 border border-slate-200/55 rounded-2.5xl p-5 space-y-3.5">

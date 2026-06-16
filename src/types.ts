@@ -73,5 +73,6 @@ export interface CatalogProduct {
   category: string;
   subcategory?: string;
   name: string;
+  image?: string;
 }
 

@@ -114,36 +114,34 @@ export default function App() {
       // If Firestore is empty (new setup), seed with fallback presets immediately so the site is instantly alive
       if (cats.length === 0) {
         console.log("Firestore est vide. Initialisation avec les kits et catégories de démonstration...");
-        
-        for (const cat of fallbackCategories) {
-          try {
-            await setDoc(doc(db, 'categories', cat.id), cat);
-            cats.push(cat);
-          } catch (err) {
-            handleFirestoreError(err, OperationType.CREATE, `categories/${cat.id}`);
+        try {
+          const batch = writeBatch(db);
+          for (const cat of fallbackCategories) {
+            batch.set(doc(db, 'categories', cat.id), cat);
           }
-        }
-
-        for (const kit of fallbackKits) {
-          try {
-            await setDoc(doc(db, 'kits', kit.id), kit);
-            kts.push(kit);
-          } catch (err) {
-            handleFirestoreError(err, OperationType.CREATE, `kits/${kit.id}`);
+          for (const kit of fallbackKits) {
+            batch.set(doc(db, 'kits', kit.id), kit);
           }
+          await batch.commit();
+          cats.push(...fallbackCategories);
+          kts.push(...fallbackKits);
+        } catch (err) {
+          console.error("Erreur lors de l'initialisation des catégories et kits :", err);
         }
       }
 
       // If active prod collection is empty, seed it
       if (prods.length === 0) {
         console.log("Seeding default catalogue products...");
-        for (const item of fallbackProducts) {
-          try {
-            await setDoc(doc(db, 'products', item.id), item);
-            prods.push(item);
-          } catch (err) {
-            console.warn("Impossible d'ajouter le produit de demonstration:", item.id, err);
+        try {
+          const batch = writeBatch(db);
+          for (const item of fallbackProducts) {
+            batch.set(doc(db, 'products', item.id), item);
           }
+          await batch.commit();
+          prods.push(...fallbackProducts);
+        } catch (err) {
+          console.error("Impossible d'ajouter les produits de demonstration:", err);
         }
       }
 
@@ -384,7 +382,8 @@ export default function App() {
       id: newId,
       category: prodData.category || 'Produits alimentaires',
       subcategory: prodData.subcategory || '',
-      name: prodData.name || ''
+      name: prodData.name || '',
+      image: prodData.image || ''
     };
     try {
       await setDoc(doc(db, 'products', newId), fullProd);
@@ -617,6 +616,7 @@ export default function App() {
                 <KitDetailsView
                   kit={activeKit}
                   category={activeCategory}
+                  products={products}
                   onBack={handleBack}
                   onChooseKit={() => setIsFormOpen(true)}
                 />
