@@ -148,6 +148,29 @@ export default function App() {
     fetchData();
   }, []);
 
+  // Dynamically update browser tab Title and Favicon based on site configuration
+  useEffect(() => {
+    if (settings) {
+      const name = settings.headerBrand || "PENTA GAD";
+      const subtitle = settings.headerSubtitle || "Distribution";
+      document.title = `${name} | ${subtitle}`;
+
+      let faviconLink = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+      if (!faviconLink) {
+        faviconLink = document.createElement('link');
+        faviconLink.rel = 'icon';
+        document.head.appendChild(faviconLink);
+      }
+      
+      if (settings.logoUrl) {
+        faviconLink.href = settings.logoUrl;
+      } else {
+        // Fallback to unicode emoji svg representing the gift icon
+        faviconLink.href = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>";
+      }
+    }
+  }, [settings]);
+
   // Safe Navigation Stack Helpers
   const handleNavigate = (view: 'homepage' | 'category' | 'kit-details' | 'admin', categoryId?: string, kitId?: string) => {
     if (categoryId) setActiveCategoryId(categoryId);
