@@ -25,6 +25,7 @@ export interface AdminSession {
 }
 
 export interface SiteSettings {
+  logoUrl?: string;
   headerBrand: string;
   headerSubtitle: string;
   

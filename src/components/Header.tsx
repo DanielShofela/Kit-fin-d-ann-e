@@ -31,8 +31,14 @@ export default function Header({ currentView, onNavigate, onBack, isAdmin, onLog
               onClick={() => onNavigate('homepage')}
               className="flex items-center gap-2 cursor-pointer group"
             >
-              <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-tr from-[#0D47FF] to-[#2F6BFF] flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 duration-300">
-                <Gift className="w-4.5 h-4.5" />
+              <div className="w-8.5 h-8.5 rounded-xl border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-105 duration-300">
+                {settings?.logoUrl ? (
+                  <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-tr from-[#0D47FF] to-[#2F6BFF] flex items-center justify-center text-white">
+                    <Gift className="w-4.5 h-4.5" />
+                  </div>
+                )}
               </div>
               <div className="flex flex-col">
                 <span className="font-display font-extrabold text-[15px] leading-none tracking-tight text-slate-900 group-hover:text-[#0D47FF] duration-250 uppercase">

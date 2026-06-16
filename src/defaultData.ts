@@ -237,6 +237,7 @@ export const fallbackKits: Kit[] = [
 ];
 
 export const fallbackSettings: SiteSettings = {
+  logoUrl: "",
   headerBrand: "PENTA GAD",
   headerSubtitle: "Distribution",
   
