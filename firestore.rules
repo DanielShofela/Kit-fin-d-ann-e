@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (default deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Allow public read access to categories so visitors can browse kits,
+    // and full write access for administrative panel catalog updates.
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Allow public read access to kits so visitors can browse materials,
+    // and full write access for administrative panel catalog updates.
+    match /kits/{kitId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

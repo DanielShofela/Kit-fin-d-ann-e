@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "Category representing grouping of kits (e.g. Bronze, Argent, Or, Platine)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "startingAmount": { "type": "string" },
+        "image": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "title", "startingAmount", "image", "order"]
+    },
+    "Kit": {
+      "title": "Kit",
+      "description": "A festive kit containing food, electronics or comfort items details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "name": { "type": "string" },
+        "dailyAmount": { "type": "string" },
+        "totalValue": { "type": "string" },
+        "images": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "products": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "benefits": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "deliveryInfo": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "categoryId", "name", "dailyAmount", "totalValue", "images", "products", "benefits", "deliveryInfo", "order"]
+    }
+  },
+  "firestore": {
+    "categories": {
+      "schema": "Category",
+      "description": "List of categories"
+    },
+    "kits": {
+      "schema": "Kit",
+      "description": "List of kits belonging to categories"
+    }
+  }
+}

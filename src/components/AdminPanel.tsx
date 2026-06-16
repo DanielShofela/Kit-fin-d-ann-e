@@ -91,6 +91,45 @@ export default function AdminPanel({
 
   const [isUploading, setIsUploading] = useState(false);
 
+  const compressImage = (base64Str: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        } else {
+          resolve(base64Str);
+        }
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+      img.src = base64Str;
+    });
+  };
+
   const uploadImageFile = async (file: File): Promise<string | null> => {
     setIsUploading(true);
     try {
@@ -101,44 +140,41 @@ export default function AdminPanel({
         reader.readAsDataURL(file);
       });
 
-      const base64Data = await base64Promise;
+      let rawBase64 = await base64Promise;
+      // Compress image client side to keep Firestore document size tiny
+      const compressedBase64 = await compressImage(rawBase64);
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: file.name,
-          type: file.type,
-          data: base64Data
-        })
-      });
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: file.name,
+            type: 'image/jpeg',
+            data: compressedBase64
+          })
+        });
 
-      if (!res.ok) {
-        let errorMessage = 'Erreur lors du téléversement';
-        try {
-          const contentType = res.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const errData = await res.json();
-            errorMessage = errData.error || errorMessage;
-          } else {
-            const textData = await res.text();
-            errorMessage = textData.substring(0, 150) || res.statusText;
-          }
-        } catch (e) {
-          errorMessage = `Erreur (${res.status}): ${res.statusText}`;
+        if (!res.ok) {
+          throw new Error('Server upload offline or rejected');
         }
-        throw new Error(errorMessage);
-      }
 
-      const data = await res.json();
-      setIsUploading(false);
-      return data.url;
+        const data = await res.json();
+        setIsUploading(false);
+        return data.url;
+      } catch (uploadErr) {
+        console.warn("L'envoi vers l'API serveur a échoué (hébergement statique). Utilisation du stockage base64 direct:", uploadErr);
+        // On static hosting (Netlify), we fall back to storing the compressed base64 directly in Firestore
+        setIsUploading(false);
+        showStatus('Image traitée et stockée localement dans la base de données !');
+        return compressedBase64;
+      }
     } catch (err: any) {
       console.error(err);
-      showStatus(err.message || 'Erreur lors de l’envoi de l’image', 'error');
+      showStatus(err.message || 'Erreur lors du traitement de l’image', 'error');
       setIsUploading(false);
       return null;
     }

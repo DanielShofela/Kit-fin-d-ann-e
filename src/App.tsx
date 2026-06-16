@@ -9,6 +9,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Category, Kit } from './types';
 import { fallbackCategories, fallbackKits } from './defaultData';
 
+// Firebase & Firestore setup
+import { 
+  collection, getDocs, setDoc, doc, deleteDoc, writeBatch, query, orderBy 
+} from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from './firebase';
+
 // Modular Components
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -48,76 +54,73 @@ export default function App() {
   // Global Customizable WhatsApp Phone Number
   const WHATSAPP_HOTLINE = "+2250703397921";
 
-  // Data Fetching loader
+  // Data Fetching loader from Firebase Firestore
   const fetchData = async () => {
     try {
       setLoading(true);
       setErrorMsg('');
 
-      // Attempt loading from backend server API
-      const catRes = await fetch('/api/categories');
-      const kitRes = await fetch('/api/kits');
+      // Fetch categories and kits from Firebase Firestore
+      const cats: Category[] = [];
+      const kts: Kit[] = [];
 
-      if (!catRes.ok || !kitRes.ok) {
-        throw new Error('Impossible de se connecter au serveur de données en direct.');
+      try {
+        const catQuery = query(collection(db, 'categories'), orderBy('order', 'asc'));
+        const catSnap = await getDocs(catQuery);
+        catSnap.forEach((docSnap) => {
+          cats.push({ id: docSnap.id, ...docSnap.data() } as Category);
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, 'categories');
       }
 
-      const catText = await catRes.text();
-      const kitText = await kitRes.text();
-
-      // Detect if static host fallbacks/redirects returned HTML instead of JSON
-      if (
-        catText.trim().startsWith('<!DOCTYPE') || 
-        kitText.trim().startsWith('<!DOCTYPE') || 
-        catText.trim().startsWith('<html') || 
-        kitText.trim().startsWith('<html')
-      ) {
-        throw new Error('Données serveurs non disponibles sur cet hébergement statique.');
+      try {
+        const kitQuery = query(collection(db, 'kits'), orderBy('order', 'asc'));
+        const kitSnap = await getDocs(kitQuery);
+        kitSnap.forEach((docSnap) => {
+          kts.push({ id: docSnap.id, ...docSnap.data() } as Kit);
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, 'kits');
       }
 
-      const catsData = JSON.parse(catText);
-      const kitsData = JSON.parse(kitText);
+      // If Firestore is empty (new setup), seed with fallback presets immediately so the site is instantly alive
+      if (cats.length === 0) {
+        console.log("Firestore est vide. Initialisation avec les kits et catégories de démonstration...");
+        
+        for (const cat of fallbackCategories) {
+          try {
+            await setDoc(doc(db, 'categories', cat.id), cat);
+            cats.push(cat);
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, `categories/${cat.id}`);
+          }
+        }
 
-      setCategories(catsData);
-      setKits(kitsData);
-      setIsStaticMode(false);
-      localStorage.setItem('penta_is_static_mode', 'false');
-    } catch (err: any) {
-      console.warn("Passage en mode de stockage local autonome (Netlify/Hébergement statique détecté):", err.message);
-      setIsStaticMode(true);
+        for (const kit of fallbackKits) {
+          try {
+            await setDoc(doc(db, 'kits', kit.id), kit);
+            kts.push(kit);
+          } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, `kits/${kit.id}`);
+          }
+        }
+      }
+
+      // Sort lists by order property
+      cats.sort((a, b) => (a.order || 0) - (b.order || 0));
+      kts.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+      setCategories(cats);
+      setKits(kts);
+      setIsStaticMode(true); // Always keep in static/decentralized Firestore direct mode
       localStorage.setItem('penta_is_static_mode', 'true');
-
-      // Initialize from localStorage or default seeds
-      const localCatsStr = localStorage.getItem('penta_local_categories');
-      const localKitsStr = localStorage.getItem('penta_local_kits');
-
-      let localCats: Category[] = [];
-      let localKits: Kit[] = [];
-
-      if (localCatsStr) {
-        try {
-          localCats = JSON.parse(localCatsStr);
-        } catch (e) {
-          localCats = fallbackCategories;
-        }
-      } else {
-        localCats = fallbackCategories;
-        localStorage.setItem('penta_local_categories', JSON.stringify(fallbackCategories));
-      }
-
-      if (localKitsStr) {
-        try {
-          localKits = JSON.parse(localKitsStr);
-        } catch (e) {
-          localKits = fallbackKits;
-        }
-      } else {
-        localKits = fallbackKits;
-        localStorage.setItem('penta_local_kits', JSON.stringify(fallbackKits));
-      }
-
-      setCategories(localCats);
-      setKits(localKits);
+    } catch (err: any) {
+      console.warn("Erreur de connexion Firebase Firestore. Utilisation de la mémoire locale :", err.message);
+      setErrorMsg("Une erreur de communication est survenue. Chargement en mode local.");
+      
+      setCategories(fallbackCategories);
+      setKits(fallbackKits);
     } finally {
       setLoading(false);
     }
@@ -143,7 +146,6 @@ export default function App() {
 
   const handleBack = () => {
     if (viewHistory.length <= 1) {
-      // Return to homepage safely as fallback
       setCurrentView('homepage');
       setViewHistory([{ view: 'homepage' }]);
       return;
@@ -166,60 +168,13 @@ export default function App() {
 
   // Auth Operations
   const handleLogin = async (passwordInput: string): Promise<boolean> => {
-    if (isStaticMode || passwordInput === 'adminpenta2026') {
-      if (passwordInput === 'adminpenta2026') {
-        const fakeToken = 'Token-adminpenta2026';
-        setToken(fakeToken);
-        localStorage.setItem('penta_admin_token', fakeToken);
-        if (!isStaticMode) {
-          setIsStaticMode(true);
-          localStorage.setItem('penta_is_static_mode', 'true');
-          fetchData();
-        }
-        return true;
-      }
+    if (passwordInput === 'adminpenta2026') {
+      const fakeToken = 'Token-adminpenta2026';
+      setToken(fakeToken);
+      localStorage.setItem('penta_admin_token', fakeToken);
+      return true;
     }
-
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: passwordInput })
-      });
-
-      if (!res.ok) {
-        if (passwordInput === 'adminpenta2026') {
-          const fakeToken = 'Token-adminpenta2026';
-          setToken(fakeToken);
-          localStorage.setItem('penta_admin_token', fakeToken);
-          setIsStaticMode(true);
-          localStorage.setItem('penta_is_static_mode', 'true');
-          fetchData();
-          return true;
-        }
-        return false;
-      }
-
-      const data = await res.json();
-      if (data.token) {
-        setToken(data.token);
-        localStorage.setItem('penta_admin_token', data.token);
-        return true;
-      }
-      return false;
-    } catch (err) {
-      console.error(err);
-      if (passwordInput === 'adminpenta2026') {
-        const fakeToken = 'Token-adminpenta2026';
-        setToken(fakeToken);
-        localStorage.setItem('penta_admin_token', fakeToken);
-        setIsStaticMode(true);
-        localStorage.setItem('penta_is_static_mode', 'true');
-        fetchData();
-        return true;
-      }
-      return false;
-    }
+    return false;
   };
 
   const handleLogout = () => {
@@ -230,9 +185,11 @@ export default function App() {
   };
 
 
-  // Server & Local Storage CRUD Operations Wrappers
+  // Direct Firestore Cloud CRUD Operations Wrappers
   const handleAddCategory = async (catData: Partial<Category>): Promise<boolean> => {
-    const newId = catData.title ? catData.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') : `cat-${Date.now()}`;
+    const newId = catData.title 
+      ? catData.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-') 
+      : `cat-${Date.now()}`;
     const nextOrder = categories.length > 0 ? Math.max(...categories.map(c => c.order || 0)) + 1 : 1;
     const fullCategory: Category = {
       id: newId,
@@ -242,118 +199,56 @@ export default function App() {
       order: nextOrder
     };
 
-    if (isStaticMode) {
-      const updatedCats = [...categories, fullCategory];
-      setCategories(updatedCats);
-      localStorage.setItem('penta_local_categories', JSON.stringify(updatedCats));
-      return true;
-    }
-
     try {
-      const res = await fetch('/api/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(catData)
-      });
-      if (res.ok) {
-        fetchData();
-        return true;
-      }
-      return false;
+      await setDoc(doc(db, 'categories', newId), fullCategory);
+      await fetchData();
+      return true;
     } catch (err) {
-      console.error(err);
-      return false;
+      handleFirestoreError(err, OperationType.CREATE, `categories/${newId}`);
     }
   };
 
   const handleUpdateCategory = async (id: string, catData: Partial<Category>): Promise<boolean> => {
-    if (isStaticMode) {
-      const updatedCats = categories.map(c => c.id === id ? { ...c, ...catData } : c);
-      setCategories(updatedCats);
-      localStorage.setItem('penta_local_categories', JSON.stringify(updatedCats));
-      return true;
-    }
-
     try {
-      const res = await fetch(`/api/categories/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(catData)
-      });
-      if (res.ok) {
-        fetchData();
-        return true;
-      }
-      return false;
+      const catRef = doc(db, 'categories', id);
+      await setDoc(catRef, catData, { merge: true });
+      await fetchData();
+      return true;
     } catch (err) {
-      console.error(err);
-      return false;
+      handleFirestoreError(err, OperationType.UPDATE, `categories/${id}`);
     }
   };
 
   const handleDeleteCategory = async (id: string): Promise<boolean> => {
-    if (isStaticMode) {
-      const updatedCats = categories.filter(c => c.id !== id);
-      const updatedKits = kits.filter(k => k.categoryId !== id);
-      setCategories(updatedCats);
-      setKits(updatedKits);
-      localStorage.setItem('penta_local_categories', JSON.stringify(updatedCats));
-      localStorage.setItem('penta_local_kits', JSON.stringify(updatedKits));
-      return true;
-    }
-
     try {
-      const res = await fetch(`/api/categories/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        fetchData();
-        return true;
+      // Delete the category document
+      await deleteDoc(doc(db, 'categories', id));
+      
+      // Cascade delete kits belonging to this category
+      const targetKits = kits.filter(k => k.categoryId === id);
+      for (const k of targetKits) {
+        await deleteDoc(doc(db, 'kits', k.id));
       }
-      return false;
+
+      await fetchData();
+      return true;
     } catch (err) {
-      console.error(err);
-      return false;
+      handleFirestoreError(err, OperationType.DELETE, `categories/${id}`);
     }
   };
 
   const handleReorderCategories = async (sortedIds: string[]): Promise<boolean> => {
-    if (isStaticMode) {
-      const updatedCats = sortedIds.map((id, index) => {
-        const cat = categories.find(c => c.id === id);
-        return cat ? { ...cat, order: index + 1 } : null;
-      }).filter(Boolean) as Category[];
-      setCategories(updatedCats);
-      localStorage.setItem('penta_local_categories', JSON.stringify(updatedCats));
-      return true;
-    }
-
     try {
-      const res = await fetch('/api/reorder-categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ sortedIds })
+      const batch = writeBatch(db);
+      sortedIds.forEach((id, index) => {
+        const catRef = doc(db, 'categories', id);
+        batch.update(catRef, { order: index + 1 });
       });
-      if (res.ok) {
-        fetchData();
-        return true;
-      }
-      return false;
+      await batch.commit();
+      await fetchData();
+      return true;
     } catch (err) {
-      console.error(err);
-      return false;
+      handleFirestoreError(err, OperationType.UPDATE, 'categories/reorder');
     }
   };
 
@@ -373,117 +268,48 @@ export default function App() {
       order: nextOrder
     };
 
-    if (isStaticMode) {
-      const updatedKits = [...kits, fullKit];
-      setKits(updatedKits);
-      localStorage.setItem('penta_local_kits', JSON.stringify(updatedKits));
-      return true;
-    }
-
     try {
-      const res = await fetch('/api/kits', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(kitData)
-      });
-      if (res.ok) {
-        fetchData();
-        return true;
-      }
-      return false;
+      await setDoc(doc(db, 'kits', newId), fullKit);
+      await fetchData();
+      return true;
     } catch (err) {
-      console.error(err);
-      return false;
+      handleFirestoreError(err, OperationType.CREATE, `kits/${newId}`);
     }
   };
 
   const handleUpdateKit = async (id: string, kitData: Partial<Kit>): Promise<boolean> => {
-    if (isStaticMode) {
-      const updatedKits = kits.map(k => k.id === id ? { ...k, ...kitData } : k);
-      setKits(updatedKits);
-      localStorage.setItem('penta_local_kits', JSON.stringify(updatedKits));
-      return true;
-    }
-
     try {
-      const res = await fetch(`/api/kits/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(kitData)
-      });
-      if (res.ok) {
-        fetchData();
-        return true;
-      }
-      return false;
+      const kitRef = doc(db, 'kits', id);
+      await setDoc(kitRef, kitData, { merge: true });
+      await fetchData();
+      return true;
     } catch (err) {
-      console.error(err);
-      return false;
+      handleFirestoreError(err, OperationType.UPDATE, `kits/${id}`);
     }
   };
 
   const handleDeleteKit = async (id: string): Promise<boolean> => {
-    if (isStaticMode) {
-      const updatedKits = kits.filter(k => k.id !== id);
-      setKits(updatedKits);
-      localStorage.setItem('penta_local_kits', JSON.stringify(updatedKits));
-      return true;
-    }
-
     try {
-      const res = await fetch(`/api/kits/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        fetchData();
-        return true;
-      }
-      return false;
+      await deleteDoc(doc(db, 'kits', id));
+      await fetchData();
+      return true;
     } catch (err) {
-      console.error(err);
-      return false;
+      handleFirestoreError(err, OperationType.DELETE, `kits/${id}`);
     }
   };
 
   const handleReorderKits = async (sortedIds: string[]): Promise<boolean> => {
-    if (isStaticMode) {
-      const updatedKits = sortedIds.map((id, index) => {
-        const kit = kits.find(k => k.id === id);
-        return kit ? { ...kit, order: index + 1 } : null;
-      }).filter(Boolean) as Kit[];
-      const remainingKits = kits.filter(k => !sortedIds.includes(k.id));
-      const finalKits = [...updatedKits, ...remainingKits];
-      setKits(finalKits);
-      localStorage.setItem('penta_local_kits', JSON.stringify(finalKits));
-      return true;
-    }
-
     try {
-      const res = await fetch('/api/reorder-kits', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ sortedIds })
+      const batch = writeBatch(db);
+      sortedIds.forEach((id, index) => {
+        const kitRef = doc(db, 'kits', id);
+        batch.update(kitRef, { order: index + 1 });
       });
-      if (res.ok) {
-        fetchData();
-        return true;
-      }
-      return false;
+      await batch.commit();
+      await fetchData();
+      return true;
     } catch (err) {
-      console.error(err);
-      return false;
+      handleFirestoreError(err, OperationType.UPDATE, 'kits/reorder');
     }
   };
 
